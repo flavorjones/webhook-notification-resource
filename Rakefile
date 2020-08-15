@@ -1,3 +1,15 @@
+begin
+  require "concourse"
+
+  Concourse.new("gitter-notification-resource",
+                directory: "ci",
+                fly_target: "flavorjones",
+                format: true,
+               ).create_tasks!
+rescue LoadError
+  warn "#{__FILE__}: skipping concourse config"
+end
+
 require "rake/testtask"
 
 Rake::TestTask.new do |t|

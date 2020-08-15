@@ -2,3 +2,4 @@
 *.log
 .git
 Dockerfile
+ci/private.yml
