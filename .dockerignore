@@ -2,4 +2,5 @@
 *.log
 .git
 Dockerfile
-ci/private.yml
+ci
+docs

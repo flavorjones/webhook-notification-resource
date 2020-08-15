@@ -9,3 +9,5 @@ set -eux
 cat /etc/alpine-release
 cd /work
 rake test
+find /work | sort
+find /opt/resource | sort
