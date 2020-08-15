@@ -2,7 +2,7 @@
 
 Send markdown-formatted messages to a [Gitter][] channel from a [Concourse][] CI pipeline, including pre-formatted job status messages.
 
-TODO: screenshots of success and failure notifications
+![Screenshot](docs/activity-feed-screenshot-1.png)
 
   [Gitter]: https://gitter.im
   [Concourse]: https://concourse.ci
