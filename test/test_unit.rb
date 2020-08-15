@@ -39,10 +39,11 @@ describe "GitterNotificationResource" do
   end
 
   describe "#out" do
-    let(:resource) {
+    let(:resource) do
       GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
                                      "dryrun" => true)
-    }
+    end
+
     let(:absolute_message_file_path) { File.expand_path(File.join(File.dirname(__FILE__), "test-message.md")) }
     let(:relative_message_file_path) { "test/test-message.md" } # relative to project root
 
@@ -72,6 +73,18 @@ describe "GitterNotificationResource" do
       end
     end
 
+    describe "when passing 'message'" do
+      it "contents are passed through an environment expander" do
+        env_expander = Minitest::Mock.new
+        env_expander.expect(:expand, "output message", ["input message"])
+
+        output = resource.out({ "message" => "input message" }, env_expander: env_expander)
+        assert_equal "output message", message_from(output)
+
+        env_expander.verify
+      end
+    end
+
     describe "when passing 'message_file'" do
       describe "and the file exists at that absolute path" do
         it "sets the message to the file contents" do
@@ -86,6 +99,16 @@ describe "GitterNotificationResource" do
           output = resource.out({ "message_file" => relative_message_file_path })
           assert_includes(output["metadata"], { "name" => "message",
                                                 "value" => "this is a markdown message from a file\n" })
+        end
+
+        it "contents are passed through an environment expander" do
+          env_expander = Minitest::Mock.new
+          env_expander.expect(:expand, "output message", ["this is a markdown message from a file\n"])
+
+          output = resource.out({ "message_file" => relative_message_file_path }, env_expander: env_expander)
+          assert_equal "output message", message_from(output)
+
+          env_expander.verify
         end
       end
 
@@ -109,16 +132,37 @@ describe "GitterNotificationResource" do
             output = resource.out({ "status" => status })
             assert_equal message_file_contents, message_from(output)
           end
+
+          it "contents are passed through an environment expander" do
+            env_expander = Minitest::Mock.new
+            env_expander.expect(:expand, "output message", [message_file_contents])
+
+            output = resource.out({ "status" => status }, env_expander: env_expander)
+            assert_equal "output message", message_from(output)
+
+            env_expander.verify
+          end
         end
       end
 
       describe "and the status is invalid" do
-        let(:message_file_path) {
+        let(:message_file_path) do
           File.expand_path(File.join(File.basename(__FILE__), "..", "resource", "messages", "unknown.md"))
-        }
+        end
+
         it "returns the 'unknown' message" do
           output = resource.out({ "status" => "not-a-valid-status" })
           assert_equal message_file_contents, message_from(output)
+        end
+
+        it "contents are passed through an environment expander" do
+          env_expander = Minitest::Mock.new
+          env_expander.expect(:expand, "output message", [message_file_contents])
+
+          output = resource.out({ "status" => "not-a-valid-status" }, env_expander: env_expander)
+          assert_equal "output message", message_from(output)
+
+          env_expander.verify
         end
       end
     end
