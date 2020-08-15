@@ -54,10 +54,12 @@ This resource comes with some standard pre-formatted messages to reflect typical
 
 Valid `status` values:
 
-* "success" will post the contents of [resources/messages/success.md](resources/messages/success.md)
-* "failure" will post the contents of [resources/messages/failure.md](resources/messages/failure.md)
-* "error" will post the contents of [resources/messages/error.md](resources/messages/error.md)
-* "abort" will post the contents of [resources/messages/abort.md](resources/messages/abort.md)
+* `aborted` will post the contents of [resources/messages/aborted.md](resources/messages/aborted.md)
+* `errored` will post the contents of [resources/messages/errored.md](resources/messages/errored.md)
+* `failed` will post the contents of [resources/messages/failed.md](resources/messages/failed.md)
+* `pending` will post the contents of [resources/messages/pending.md](resources/messages/pending.md)
+* `started` will post the contents of [resources/messages/started.md](resources/messages/started.md)
+* `succeeded` will post the contents of [resources/messages/succeeded.md](resources/messages/succeeded.md)
 
 Any other value will post the contents of [resources/messages/unknown.md](resources/messages/unknown.md).
 
