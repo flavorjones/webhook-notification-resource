@@ -6,7 +6,7 @@ Rake::TestTask.new do |t|
   t.test_files = FileList["test/test*.rb"]
   t.warning = true
   t.verbose = true
-  t.options = "--verbose"
+  t.options = "--pride"
 end
 
 namespace "docker" do
