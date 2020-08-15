@@ -1,3 +1,5 @@
+require "net/http"
+
 class GitterNotificationResource
   module OutParams
     STATUS = "status"
@@ -27,6 +29,12 @@ class GitterNotificationResource
     end
   end
 
+  module GitterWebhookHandler
+    def self.post(webhook, message)
+      Net::HTTP.post_form(URI(webhook), "message" => message)
+    end
+  end
+
   attr_reader :webhook, :dryrun
 
   def initialize(source = {})
@@ -34,7 +42,7 @@ class GitterNotificationResource
     @dryrun = source.fetch("dryrun", false)
   end
 
-  def out(params = {}, env_expander: ConcourseEnvExpander)
+  def out(params = {}, env_expander: ConcourseEnvExpander, webhook_handler: GitterWebhookHandler)
     if !params.key?(OutParams::STATUS) && !params.key?(OutParams::MESSAGE) && !params.key?(OutParams::MESSAGE_FILE)
       raise KeyError.new("could not find 'status', 'message', or 'message_file'")
     end
@@ -58,6 +66,13 @@ class GitterNotificationResource
     metadata << metadata_name_value_pair("webhook", webhook)
     metadata << metadata_name_value_pair("dryrun", dryrun)
     metadata << metadata_name_value_pair("message", message)
+
+    if !dryrun
+      response = webhook_handler.post(webhook, message)
+      if !response.kind_of?(Net::HTTPSuccess)
+        metadata << metadata_name_value_pair("error", "#{response.code}: #{response.message}")
+      end
+    end
 
     { "version" => { "ref" => "none" }, "metadata" => metadata }
   end

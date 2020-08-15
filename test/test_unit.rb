@@ -39,9 +39,11 @@ describe "GitterNotificationResource" do
   end
 
   describe "#out" do
+    let(:resource_dryrun) { true }
+
     let(:resource) do
       GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                     "dryrun" => true)
+                                     "dryrun" => resource_dryrun)
     end
 
     let(:absolute_message_file_path) { File.expand_path(File.join(File.dirname(__FILE__), "test-message.md")) }
@@ -163,6 +165,64 @@ describe "GitterNotificationResource" do
           assert_equal "output message", message_from(output)
 
           env_expander.verify
+        end
+      end
+    end
+
+    describe "http post" do
+      let(:success_response) { Net::HTTPOK.new("1.1", 200, "") }
+      let(:failure_response) { Net::HTTPNotFound.new("1.1", 404, "this page is not found") }
+
+      describe "when dryrun is true" do
+        let(:resource_dryrun) { true }
+
+        it "does not call the webhook handler" do
+          webhook_handler = Minitest::Mock.new
+          # we expect no calls will be made
+
+          resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+
+          webhook_handler.verify
+        end
+      end
+
+      describe "when dryrun is false" do
+        let(:resource_dryrun) { false }
+
+        it "does calls the webhook handler" do
+          webhook_handler = Minitest::Mock.new
+          webhook_handler.expect(:post, success_response, [resource.webhook, "markdown message"])
+
+          resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+
+          webhook_handler.verify
+        end
+
+        describe "on successful post" do
+          it "does not emit error metadata" do
+            webhook_handler = Minitest::Mock.new
+            webhook_handler.expect(:post, success_response, [resource.webhook, "markdown message"])
+
+            output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+            refute output["metadata"].find { |datum| datum["name"] == "error" }
+
+            webhook_handler.verify
+          end
+        end
+
+        describe "on failure to post" do
+          it "does not emit error metadata" do
+            webhook_handler = Minitest::Mock.new
+            webhook_handler.expect(:post, failure_response, [resource.webhook, "markdown message"])
+
+            output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+            error = output["metadata"].find { |datum| datum["name"] == "error" }
+            assert error
+            assert_match(/this page is not found/, error["value"])
+            assert_match(/404/, error["value"])
+
+            webhook_handler.verify
+          end
         end
       end
     end
