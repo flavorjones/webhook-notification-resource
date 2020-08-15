@@ -17,10 +17,10 @@ namespace "docker" do
     sh "docker build -t #{DOCKER_TAG} -f Dockerfile ."
   end
 
-  # desc "Push the docker image"
-  # task "push" do
-  #   sh "docker push #{DOCKER_TAG}"
-  # end
+  desc "Push the docker image"
+  task "push" do
+    sh "docker push #{DOCKER_TAG}"
+  end
 
   desc "Run the tests in the docker container"
   task "test" => "docker:build" do
