@@ -1,5 +1,3 @@
-require "rest-client"
-
 class GitterNotificationResource
   module OutParams
     STATUS = "status"
