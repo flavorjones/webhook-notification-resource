@@ -122,16 +122,22 @@ describe "GitterNotificationResource" do
     end
 
     describe "when passing 'status'" do
+      class NullEnvExpander
+        def self.expand(message)
+          message
+        end
+      end
+
       let(:message_file_contents) { File.read(message_file_path) }
 
-      ["success", "failure", "error", "abort"].each do |status|
+      ["succeeded", "failed", "errored", "aborted"].each do |status|
         describe "and the status is '#{status}'" do
           let(:message_file_path) {
             File.expand_path(File.join(File.basename(__FILE__), "..", "resource", "messages", "#{status}.md"))
           }
 
           it "returns the '#{status}' message" do
-            output = resource.out({ "status" => status })
+            output = resource.out({ "status" => status }, env_expander: NullEnvExpander)
             assert_equal message_file_contents, message_from(output)
           end
 
@@ -153,7 +159,7 @@ describe "GitterNotificationResource" do
         end
 
         it "returns the 'unknown' message" do
-          output = resource.out({ "status" => "not-a-valid-status" })
+          output = resource.out({ "status" => "not-a-valid-status" }, env_expander: NullEnvExpander)
           assert_equal message_file_contents, message_from(output)
         end
 
