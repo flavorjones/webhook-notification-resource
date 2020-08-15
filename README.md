@@ -54,14 +54,14 @@ This resource comes with some standard pre-formatted messages to reflect typical
 
 Valid `status` values:
 
-* `aborted` will post the contents of [resources/messages/aborted.md](resources/messages/aborted.md)
-* `errored` will post the contents of [resources/messages/errored.md](resources/messages/errored.md)
-* `failed` will post the contents of [resources/messages/failed.md](resources/messages/failed.md)
-* `pending` will post the contents of [resources/messages/pending.md](resources/messages/pending.md)
-* `started` will post the contents of [resources/messages/started.md](resources/messages/started.md)
-* `succeeded` will post the contents of [resources/messages/succeeded.md](resources/messages/succeeded.md)
+* `aborted` will post the contents of [resource/messages/aborted.md](resource/messages/aborted.md)
+* `errored` will post the contents of [resource/messages/errored.md](resource/messages/errored.md)
+* `failed` will post the contents of [resource/messages/failed.md](resource/messages/failed.md)
+* `pending` will post the contents of [resource/messages/pending.md](resource/messages/pending.md)
+* `started` will post the contents of [resource/messages/started.md](resource/messages/started.md)
+* `succeeded` will post the contents of [resource/messages/succeeded.md](resource/messages/succeeded.md)
 
-Any other value will post the contents of [resources/messages/unknown.md](resources/messages/unknown.md).
+Any other value will post the contents of [resource/messages/unknown.md](resource/messages/unknown.md).
 
 
 #### Sending Custom Messages
