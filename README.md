@@ -93,7 +93,7 @@ resources:
 - name: foobar-gitter-channel
   type: gitter-notification
   source:
-    webhook: https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe
+    webhook: ((webhook_url))
 
 jobs:
 - name: run-some-tests
@@ -119,7 +119,7 @@ resources:
 - name: foobar-gitter-channel
   type: gitter-notification
   source:
-    webhook: https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe
+    webhook: ((webhook_url))
 
 - name: post-a-message-to-gitter
   plan:
