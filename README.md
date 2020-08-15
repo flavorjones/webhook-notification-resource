@@ -131,10 +131,21 @@ resources:
 
 ## Configuration of a Gitter Webhook
 
-TODO - step by step instructions of setting up a webhook, with screenshots
+Here's how to create a webhook for your Gitter channel.
 
-e.g., https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe
-                                               
+1. Go to your channel settings:
+
+![step-1](docs/create-webhook-step-1.png)
+
+2. Click on "Custom"
+
+![step-2](docs/create-webhook-step-2.png)
+
+3. Copy your webhook URI
+
+![step-3](docs/create-webhook-step-3.png)
+
+Your generated webhook should be kept private, probably in a concourse pipeline variables file.
 
 ## Roadmap
 
