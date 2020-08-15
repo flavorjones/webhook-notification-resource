@@ -1,5 +1,4 @@
-require "minitest/autorun"
-require "gitter-notification-resource"
+require "helper"
 
 describe "GitterNotificationResource" do
   describe "#initialize" do
