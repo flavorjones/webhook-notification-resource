@@ -2,7 +2,7 @@ require "helper"
 
 describe "GitterNotificationResource" do
   def message_from(output)
-    output["metadata"].find { |datum| datum["name"] == "message" }
+    output["metadata"].find { |datum| datum["name"] == "message" }["value"]
   end
 
   describe "#initialize" do
@@ -48,21 +48,21 @@ describe "GitterNotificationResource" do
 
     it "requires one of 'status', 'message', or 'message_file'" do
       assert_raises(KeyError) { resource.out }
-      assert_raises(KeyError) { resource.out({}) }
+      assert_raises(KeyError) { resource.out({ "irrelevant" => "ignored" }) }
 
-      resource.out("status" => "success")
-      resource.out("message" => "this is a markdown message")
-      resource.out("message_file" => absolute_message_file_path)
+      resource.out({ "status" => "success" })
+      resource.out({ "message" => "this is a markdown message" })
+      resource.out({ "message_file" => absolute_message_file_path })
     end
 
     describe "return value is a hash" do
       it "contains a placeholder version" do
-        output = resource.out("status" => "success")
+        output = resource.out({ "status" => "success" })
         assert_equal({ "ref" => "none" }, output["version"])
       end
 
       it "contains descriptive metadata for source and params" do
-        output = resource.out("message" => "this is a markdown message")
+        output = resource.out({ "message" => "this is a markdown message" })
         assert_includes(output["metadata"], { "name" => "dryrun",
                                               "value" => true })
         assert_includes(output["metadata"], { "name" => "webhook",
@@ -75,7 +75,7 @@ describe "GitterNotificationResource" do
     describe "when passing 'message_file'" do
       describe "and the file exists at that absolute path" do
         it "sets the message to the file contents" do
-          output = resource.out("message_file" => absolute_message_file_path)
+          output = resource.out({ "message_file" => absolute_message_file_path })
           assert_includes(output["metadata"], { "name" => "message",
                                                 "value" => "this is a markdown message from a file\n" })
         end
@@ -83,7 +83,7 @@ describe "GitterNotificationResource" do
 
       describe "and the file exists at that relative path" do
         it "sets the message to the file contents" do
-          output = resource.out("message_file" => relative_message_file_path)
+          output = resource.out({ "message_file" => relative_message_file_path })
           assert_includes(output["metadata"], { "name" => "message",
                                                 "value" => "this is a markdown message from a file\n" })
         end
@@ -91,7 +91,7 @@ describe "GitterNotificationResource" do
 
       describe "and the file does not exist" do
         it "raises an exception" do
-          assert_raises { resource.out("message_file" => "road/to/nowhere") }
+          assert_raises { resource.out({ "message_file" => "road/to/nowhere" }) }
         end
       end
     end
@@ -106,9 +106,8 @@ describe "GitterNotificationResource" do
           }
 
           it "returns the '#{status}' message" do
-            output = resource.out("status" => status)
-            actual = message_from output
-            assert_equal message_file_contents, actual["value"]
+            output = resource.out({ "status" => status })
+            assert_equal message_file_contents, message_from(output)
           end
         end
       end
@@ -118,9 +117,8 @@ describe "GitterNotificationResource" do
           File.expand_path(File.join(File.basename(__FILE__), "..", "resource", "messages", "unknown.md"))
         }
         it "returns the 'unknown' message" do
-          output = resource.out("status" => "not-a-valid-status")
-          actual = message_from output
-          assert_equal message_file_contents, actual["value"]
+          output = resource.out({ "status" => "not-a-valid-status" })
+          assert_equal message_file_contents, message_from(output)
         end
       end
     end
@@ -131,35 +129,30 @@ describe "GitterNotificationResource" do
       it "expands env vars in the message" do # thereby expanding concourse metadata which is set as env vars
         ENV["UNIT_TEST_FOOBAR"] = "xxx"
 
-        output = resource.out("message" => "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar")
-        actual = message_from output
-        assert_equal "foo xxx xxx bar", actual["value"]
+        output = resource.out({ "message" => "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar" })
+        assert_equal "foo xxx xxx bar", message_from(output)
       end
 
       it "expands env vars within curly braces in the message" do
         ENV["UNIT_TEST_FOOBAR"] = "xxx"
 
-        output = resource.out("message" => "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar")
-        actual = message_from output
-        assert_equal "foo xxx xxx bar", actual["value"]
+        output = resource.out({ "message" => "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar" })
+        assert_equal "foo xxx xxx bar", message_from(output)
       end
 
       it "expands env vars with mixed syntax in the message" do
         ENV["UNIT_TEST_FOOBAR"] = "xxx"
 
-        output = resource.out("message" => "foo $UNIT_TEST_FOOBAR ${UNIT_TEST_FOOBAR} bar")
-        actual = message_from output
-        assert_equal "foo xxx xxx bar", actual["value"]
+        output = resource.out({ "message" => "foo $UNIT_TEST_FOOBAR ${UNIT_TEST_FOOBAR} bar" })
+        assert_equal "foo xxx xxx bar", message_from(output)
       end
 
       it "does not expand things that are not env vars" do
-        output = resource.out("message" => "foo ${UNIT_TEST_FOOBAR} bar")
-        actual = message_from output
-        assert_equal "foo ${UNIT_TEST_FOOBAR} bar", actual["value"]
+        output = resource.out({ "message" => "foo ${UNIT_TEST_FOOBAR} bar" })
+        assert_equal "foo ${UNIT_TEST_FOOBAR} bar", message_from(output)
 
-        output = resource.out("message" => "foo $UNIT_TEST_FOOBAR bar")
-        actual = message_from output
-        assert_equal "foo $UNIT_TEST_FOOBAR bar", actual["value"]
+        output = resource.out({ "message" => "foo $UNIT_TEST_FOOBAR bar" })
+        assert_equal "foo $UNIT_TEST_FOOBAR bar", message_from(output)
       end
 
       it "expands custom BUILD_URL metadata in the message" do
@@ -168,10 +161,9 @@ describe "GitterNotificationResource" do
         ENV["BUILD_PIPELINE_NAME"] = "pipeline-name"
         ENV["BUILD_JOB_NAME"] = "job-name"
         ENV["BUILD_NAME"] = "name"
-        output = resource.out("message" => "foo $BUILD_URL bar")
-        actual = message_from output
+        output = resource.out({ "message" => "foo $BUILD_URL bar" })
         expected = "foo https://ci.example.com/teams/team-name/pipelines/pipeline-name/jobs/job-name/builds/name bar"
-        assert_equal expected, actual["value"]
+        assert_equal expected, message_from(output)
       end
     end
   end

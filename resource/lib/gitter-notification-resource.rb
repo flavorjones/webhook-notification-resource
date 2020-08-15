@@ -10,17 +10,20 @@ class GitterNotificationResource
 
   module EnvExpander
     ENV_VARIABLES_REGEX = /\$([a-zA-Z_]+[a-zA-Z0-9_]*)|\$\{([a-zA-Z_]+[a-zA-Z0-9_]*)\}/
-    BUILD_URL_TEMPLATE = "${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}"
 
-    def self.expand_concourse_env(message)
-      ENV["BUILD_URL"] = EnvExpander.expand_env(BUILD_URL_TEMPLATE)
-      expand_env(message)
-    end
-
-    def self.expand_env(message)
+    def self.expand(message)
       message.gsub(ENV_VARIABLES_REGEX) do
         ENV[$1 || $2] || $&
       end
+    end
+  end
+
+  module ConcourseEnvExpander
+    BUILD_URL_TEMPLATE = "${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}"
+
+    def self.expand(message)
+      ENV["BUILD_URL"] = EnvExpander.expand(BUILD_URL_TEMPLATE)
+      EnvExpander.expand(message)
     end
   end
 
@@ -31,7 +34,7 @@ class GitterNotificationResource
     @dryrun = source.fetch("dryrun", false)
   end
 
-  def out(params = {})
+  def out(params = {}, env_expander: ConcourseEnvExpander)
     if !params.key?(OutParams::STATUS) && !params.key?(OutParams::MESSAGE) && !params.key?(OutParams::MESSAGE_FILE)
       raise KeyError.new("could not find 'status', 'message', or 'message_file'")
     end
@@ -48,7 +51,7 @@ class GitterNotificationResource
           File.read(File.join(MESSAGE_FILES_PATH, "#{UNKNOWN_STATUS}.md"))
         end
       end
-    message = EnvExpander.expand_concourse_env(message)
+    message = env_expander.expand(message)
 
     metadata = []
 
