@@ -24,7 +24,7 @@ namespace "docker" do
 
   desc "Run the tests in the docker container"
   task "test" => "docker:build" do
-    sh "docker run -it #{DOCKER_TAG} rake test"
+    sh "docker run -it #{DOCKER_TAG} /work/run-tests"
   end
 end
 
