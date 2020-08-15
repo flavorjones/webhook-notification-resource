@@ -166,49 +166,63 @@ describe "GitterNotificationResource" do
         end
       end
     end
+  end
+end
 
-    describe "concourse metadata" do
-      after(:each) { ENV.delete("UNIT_TEST_FOOBAR") }
+describe "EnvExpander" do
+  before { ENV["UNIT_TEST_FOOBAR"] = replacement_text }
+  after { ENV.delete("UNIT_TEST_FOOBAR") }
 
-      it "expands env vars in the message" do # thereby expanding concourse metadata which is set as env vars
-        ENV["UNIT_TEST_FOOBAR"] = "xxx"
+  let(:replacement_text) { "xxx#{rand(1000)}" }
 
-        output = resource.out({ "message" => "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar" })
-        assert_equal "foo xxx xxx bar", message_from(output)
+  it "expands env vars in the message" do
+    output = GitterNotificationResource::EnvExpander.expand "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar"
+    assert_equal "foo #{replacement_text} #{replacement_text} bar", output
+  end
+
+  it "expands env vars within curly braces in the message" do
+    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar"
+    assert_equal "foo #{replacement_text} #{replacement_text} bar", output
+  end
+
+  it "expands env vars with mixed syntax in the message" do
+    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
+    assert_equal "foo #{replacement_text} #{replacement_text} bar", output
+  end
+
+  it "does not expand things that are not env vars" do
+    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_QUUX} bar"
+    assert_equal "foo ${UNIT_TEST_QUUX} bar", output
+
+    output = GitterNotificationResource::EnvExpander.expand "foo $UNIT_TEST_QUUX bar"
+    assert_equal "foo $UNIT_TEST_QUUX bar", output
+  end
+
+  describe "ConcourseEnvExpander" do
+    after do
+      ENV.delete("ATC_EXTERNAL_URL")
+      ENV.delete("BUILD_TEAM_NAME")
+      ENV.delete("BUILD_PIPELINE_NAME")
+      ENV.delete("BUILD_JOB_NAME")
+      ENV.delete("BUILD_NAME")
+    end
+
+    it "dynamically expands custom BUILD_URL metadata in the message" do
+      2.times do
+        ENV["ATC_EXTERNAL_URL"] = atc_external_url = "https://ci#{rand(1000)}.example.com"
+        ENV["BUILD_TEAM_NAME"] = team_name = rand(1000).to_s
+        ENV["BUILD_PIPELINE_NAME"] = pipeline_name = rand(1000).to_s
+        ENV["BUILD_JOB_NAME"] = job_name = rand(1000).to_s
+        ENV["BUILD_NAME"] = name = rand(1000).to_s
+        output = GitterNotificationResource::ConcourseEnvExpander.expand "foo $BUILD_URL bar"
+        expected = "foo #{atc_external_url}/teams/#{team_name}/pipelines/#{pipeline_name}/jobs/#{job_name}/builds/#{name} bar"
+        assert_equal expected, output
       end
+    end
 
-      it "expands env vars within curly braces in the message" do
-        ENV["UNIT_TEST_FOOBAR"] = "xxx"
-
-        output = resource.out({ "message" => "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar" })
-        assert_equal "foo xxx xxx bar", message_from(output)
-      end
-
-      it "expands env vars with mixed syntax in the message" do
-        ENV["UNIT_TEST_FOOBAR"] = "xxx"
-
-        output = resource.out({ "message" => "foo $UNIT_TEST_FOOBAR ${UNIT_TEST_FOOBAR} bar" })
-        assert_equal "foo xxx xxx bar", message_from(output)
-      end
-
-      it "does not expand things that are not env vars" do
-        output = resource.out({ "message" => "foo ${UNIT_TEST_FOOBAR} bar" })
-        assert_equal "foo ${UNIT_TEST_FOOBAR} bar", message_from(output)
-
-        output = resource.out({ "message" => "foo $UNIT_TEST_FOOBAR bar" })
-        assert_equal "foo $UNIT_TEST_FOOBAR bar", message_from(output)
-      end
-
-      it "expands custom BUILD_URL metadata in the message" do
-        ENV["ATC_EXTERNAL_URL"] = "https://ci.example.com"
-        ENV["BUILD_TEAM_NAME"] = "team-name"
-        ENV["BUILD_PIPELINE_NAME"] = "pipeline-name"
-        ENV["BUILD_JOB_NAME"] = "job-name"
-        ENV["BUILD_NAME"] = "name"
-        output = resource.out({ "message" => "foo $BUILD_URL bar" })
-        expected = "foo https://ci.example.com/teams/team-name/pipelines/pipeline-name/jobs/job-name/builds/name bar"
-        assert_equal expected, message_from(output)
-      end
+    it "expands env vars with mixed syntax in the message" do
+      output = GitterNotificationResource::ConcourseEnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
+      assert_equal "foo #{replacement_text} #{replacement_text} bar", output
     end
   end
 end
