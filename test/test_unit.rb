@@ -1,6 +1,10 @@
 require "helper"
 
 describe "GitterNotificationResource" do
+  def message_from(output)
+    output["metadata"].find { |datum| datum["name"] == "message" }
+  end
+
   describe "#initialize" do
     it "requires a webhook hash key" do
       e = assert_raises(KeyError) { GitterNotificationResource.new }
@@ -103,7 +107,7 @@ describe "GitterNotificationResource" do
 
           it "returns the '#{status}' message" do
             output = resource.out("status" => status)
-            actual = output["metadata"].find { |datum| datum["name"] == "message" }
+            actual = message_from output
             assert_equal message_file_contents, actual["value"]
           end
         end
@@ -115,16 +119,60 @@ describe "GitterNotificationResource" do
         }
         it "returns the 'unknown' message" do
           output = resource.out("status" => "not-a-valid-status")
-          actual = output["metadata"].find { |datum| datum["name"] == "message" }
+          actual = message_from output
           assert_equal message_file_contents, actual["value"]
         end
       end
     end
 
     describe "concourse metadata" do
-      # see https://gist.github.com/steakknife/4606598 for some ideas
-      it "expands standard concourse metadata in the message"
-      it "expands custom BUILD_URL metadata in the message"
+      after(:each) { ENV.delete("UNIT_TEST_FOOBAR") }
+
+      it "expands env vars in the message" do # thereby expanding concourse metadata which is set as env vars
+        ENV["UNIT_TEST_FOOBAR"] = "xxx"
+
+        output = resource.out("message" => "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar")
+        actual = message_from output
+        assert_equal "foo xxx xxx bar", actual["value"]
+      end
+
+      it "expands env vars within curly braces in the message" do
+        ENV["UNIT_TEST_FOOBAR"] = "xxx"
+
+        output = resource.out("message" => "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar")
+        actual = message_from output
+        assert_equal "foo xxx xxx bar", actual["value"]
+      end
+
+      it "expands env vars with mixed syntax in the message" do
+        ENV["UNIT_TEST_FOOBAR"] = "xxx"
+
+        output = resource.out("message" => "foo $UNIT_TEST_FOOBAR ${UNIT_TEST_FOOBAR} bar")
+        actual = message_from output
+        assert_equal "foo xxx xxx bar", actual["value"]
+      end
+
+      it "does not expand things that are not env vars" do
+        output = resource.out("message" => "foo ${UNIT_TEST_FOOBAR} bar")
+        actual = message_from output
+        assert_equal "foo ${UNIT_TEST_FOOBAR} bar", actual["value"]
+
+        output = resource.out("message" => "foo $UNIT_TEST_FOOBAR bar")
+        actual = message_from output
+        assert_equal "foo $UNIT_TEST_FOOBAR bar", actual["value"]
+      end
+
+      it "expands custom BUILD_URL metadata in the message" do
+        ENV["ATC_EXTERNAL_URL"] = "https://ci.example.com"
+        ENV["BUILD_TEAM_NAME"] = "team-name"
+        ENV["BUILD_PIPELINE_NAME"] = "pipeline-name"
+        ENV["BUILD_JOB_NAME"] = "job-name"
+        ENV["BUILD_NAME"] = "name"
+        output = resource.out("message" => "foo $BUILD_URL bar")
+        actual = message_from output
+        expected = "foo https://ci.example.com/teams/team-name/pipelines/pipeline-name/jobs/job-name/builds/name bar"
+        assert_equal expected, actual["value"]
+      end
     end
   end
 end

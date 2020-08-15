@@ -15,6 +15,7 @@ class GitterNotificationResource
   def initialize(source = {})
     @webhook = source.fetch("webhook")
     @dryrun = source.fetch("dryrun", false)
+    ENV['BUILD_URL'] = expand_env("${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}")
   end
 
   def out(params = {})
@@ -35,6 +36,8 @@ class GitterNotificationResource
                 end
               end
 
+    message = expand_env(message)
+
     metadata = []
 
     metadata << metadata_name_value_pair("webhook", webhook)
@@ -45,6 +48,14 @@ class GitterNotificationResource
   end
 
   private
+
+  ENV_VARIABLES_REGEX = /\$([a-zA-Z_]+[a-zA-Z0-9_]*)|\$\{([a-zA-Z_]+[a-zA-Z0-9_]*)\}/
+
+  def expand_env(message)
+    message.gsub(ENV_VARIABLES_REGEX) do
+      ENV[$1||$2] || $&
+    end
+  end
 
   def metadata_name_value_pair(key, value)
     { "name" => key, "value" => value }
