@@ -80,6 +80,6 @@ class GitterNotificationResource
   private
 
   def metadata_name_value_pair(key, value)
-    { "name" => key, "value" => value }
+    { "name" => key.to_s, "value" => value.to_s }
   end
 end

@@ -61,7 +61,7 @@ describe "resource scripts" do
         "version" => { "ref" => "none" },
         "metadata" => [
           { "name" => "webhook", "value" => "http://localhost:#{port}/c0ffeec0ffeecafecafe" },
-          { "name" => "dryrun", "value" => false },
+          { "name" => "dryrun", "value" => "false" },
           { "name" => "message", "value" => "this is a message" },
         ],
       }

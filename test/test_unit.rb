@@ -67,7 +67,7 @@ describe "GitterNotificationResource" do
       it "contains descriptive metadata for source and params" do
         output = resource.out({ "message" => "this is a markdown message" })
         assert_includes(output["metadata"], { "name" => "dryrun",
-                                              "value" => true })
+                                              "value" => "true" })
         assert_includes(output["metadata"], { "name" => "webhook",
                                               "value" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe" })
         assert_includes(output["metadata"], { "name" => "message",
