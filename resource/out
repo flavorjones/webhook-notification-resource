@@ -1,10 +1,10 @@
 #! /usr/bin/env ruby
 
 require "json"
-require_relative "lib/gitter-notification-resource"
+require_relative "lib/webhook-notification-resource"
 
 config = JSON.parse(STDIN.read)
 
-puts GitterNotificationResource.new(config["source"]).out(config["params"]).to_json
+puts WebhookNotificationResource.new(config["source"]).out(config["params"]).to_json
 
 exit 0

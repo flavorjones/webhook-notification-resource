@@ -1,39 +1,39 @@
 require "helper"
 
-describe "GitterNotificationResource" do
+describe "WebhookNotificationResource" do
   def message_from(output)
     output["metadata"].find { |datum| datum["name"] == "message" }["value"]
   end
 
   describe "#initialize" do
     it "requires a webhook hash key" do
-      e = assert_raises(KeyError) { GitterNotificationResource.new }
+      e = assert_raises(KeyError) { WebhookNotificationResource.new }
       assert_match(/webhook/, e.to_s)
 
-      GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
     end
   end
 
   describe "#webhook" do
     it "returns the hash key value passed to the initializer in source hash" do
-      resource = GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      resource = WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
       assert_equal("https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe", resource.webhook)
     end
   end
 
   describe "#dryrun" do
     it "defaults to false" do
-      resource = GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      resource = WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
       refute resource.dryrun
     end
 
     it "may be set by adding a hash key in the initializer param" do
-      resource = GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                                "dryrun" => true)
+      resource = WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
+                                                 "dryrun" => true)
       assert resource.dryrun
 
-      resource = GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                                "dryrun" => false)
+      resource = WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
+                                                 "dryrun" => false)
       refute resource.dryrun
     end
   end
@@ -42,8 +42,8 @@ describe "GitterNotificationResource" do
     let(:resource_dryrun) { true }
 
     let(:resource) do
-      GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                     "dryrun" => resource_dryrun)
+      WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
+                                      "dryrun" => resource_dryrun)
     end
 
     let(:absolute_message_file_path) { File.expand_path(File.join(File.dirname(__FILE__), "test-message.md")) }
@@ -77,7 +77,7 @@ describe "GitterNotificationResource" do
       it "puts version into the metadata" do
         output = resource.out({ "message" => "this is a markdown message" })
         assert_includes(output["metadata"], { "name" => "version",
-                                              "value" => GitterNotificationResource::VERSION })
+                                              "value" => WebhookNotificationResource::VERSION })
       end
     end
 
@@ -248,25 +248,25 @@ describe "EnvExpander" do
   let(:replacement_text) { "xxx#{rand(1000)}" }
 
   it "expands env vars in the message" do
-    output = GitterNotificationResource::EnvExpander.expand "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar"
     assert_equal "foo #{replacement_text} #{replacement_text} bar", output
   end
 
   it "expands env vars within curly braces in the message" do
-    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar"
     assert_equal "foo #{replacement_text} #{replacement_text} bar", output
   end
 
   it "expands env vars with mixed syntax in the message" do
-    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
     assert_equal "foo #{replacement_text} #{replacement_text} bar", output
   end
 
   it "does not expand things that are not env vars" do
-    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_QUUX} bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_QUUX} bar"
     assert_equal "foo ${UNIT_TEST_QUUX} bar", output
 
-    output = GitterNotificationResource::EnvExpander.expand "foo $UNIT_TEST_QUUX bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo $UNIT_TEST_QUUX bar"
     assert_equal "foo $UNIT_TEST_QUUX bar", output
   end
 
@@ -286,14 +286,14 @@ describe "EnvExpander" do
         ENV["BUILD_PIPELINE_NAME"] = pipeline_name = rand(1000).to_s
         ENV["BUILD_JOB_NAME"] = job_name = rand(1000).to_s
         ENV["BUILD_NAME"] = name = rand(1000).to_s
-        output = GitterNotificationResource::ConcourseEnvExpander.expand "foo $BUILD_URL bar"
+        output = WebhookNotificationResource::ConcourseEnvExpander.expand "foo $BUILD_URL bar"
         expected = "foo #{atc_external_url}/teams/#{team_name}/pipelines/#{pipeline_name}/jobs/#{job_name}/builds/#{name} bar"
         assert_equal expected, output
       end
     end
 
     it "expands env vars with mixed syntax in the message" do
-      output = GitterNotificationResource::ConcourseEnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
+      output = WebhookNotificationResource::ConcourseEnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
       assert_equal "foo #{replacement_text} #{replacement_text} bar", output
     end
   end
