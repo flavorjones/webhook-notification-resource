@@ -1,6 +1,8 @@
 require "net/http"
 
 class GitterNotificationResource
+  VERSION = "0.1.0"
+
   module OutParams
     STATUS = "status"
     MESSAGE = "message"
@@ -62,7 +64,7 @@ class GitterNotificationResource
     message = env_expander.expand(message)
 
     metadata = []
-
+    metadata << metadata_name_value_pair("version", GitterNotificationResource::VERSION)
     metadata << metadata_name_value_pair("webhook", webhook)
     metadata << metadata_name_value_pair("dryrun", dryrun)
     metadata << metadata_name_value_pair("message", message)

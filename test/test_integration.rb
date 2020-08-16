@@ -60,6 +60,7 @@ describe "resource scripts" do
       expected_stdout = {
         "version" => { "ref" => "none" },
         "metadata" => [
+          { "name" => "version", "value" => GitterNotificationResource::VERSION },
           { "name" => "webhook", "value" => "http://localhost:#{port}/c0ffeec0ffeecafecafe" },
           { "name" => "dryrun", "value" => "false" },
           { "name" => "message", "value" => "this is a message" },

@@ -73,6 +73,12 @@ describe "GitterNotificationResource" do
         assert_includes(output["metadata"], { "name" => "message",
                                               "value" => "this is a markdown message" })
       end
+
+      it "puts version into the metadata" do
+        output = resource.out({ "message" => "this is a markdown message" })
+        assert_includes(output["metadata"], { "name" => "version",
+                                              "value" => GitterNotificationResource::VERSION })
+      end
     end
 
     describe "when passing 'message'" do
