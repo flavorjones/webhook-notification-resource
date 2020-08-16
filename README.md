@@ -1,8 +1,12 @@
-# [Gitter][] Notification Resource for [Concourse][]
+# Webhook Notification Resource for [Concourse][]
 
-Send markdown-formatted messages to a [Gitter][] channel from a [Concourse][] CI pipeline, including pre-formatted job status messages.
+Send notification messages to any webhook from a [Concourse][] CI pipeline.
 
-![Screenshot](docs/activity-feed-screenshot-1.png)
+This resource provides:
+
+* Pre-formatted markdown messages, with colorful icons, for every Concourse job status.
+* Integration with [Gitter][] activity feeds.
+* Extensible design to easily add support for other webhooks. (See [Contributing](#contributing) for more information.)
 
   [Gitter]: https://gitter.im
   [Concourse]: https://concourse.ci
@@ -10,9 +14,9 @@ Send markdown-formatted messages to a [Gitter][] channel from a [Concourse][] CI
 
 ## Background
 
-[Gitter][] is a chat site based around source code repositories. It's free and I'm trying it for some of my open-source projects.
-
 [Concourse][] is an open-source continuous thing-doer. It's pretty amazing for CI and for more complicated pipelines, you should check it out.
+
+It's pretty common to want to send notification messages somewhere when a job succeeds or fails. Sometimes it's just an HTTP POST or other similarly simple action. This resource tries to make it easy to have a polished-looking informational message for these simple integrations.
 
 For more information on Concourse Resources:
 
@@ -27,11 +31,11 @@ These parameters go into the `source` fields of the resource.
 
 __Required__
 
-* `webhook`: The target webhook URL provided by Gitter (see below for instructions on creating this webhook).
+* `webhook`: The target webhook URL.
 
 __Optional__
 
-* `dryrun`: When set to `true`, the resource does not make any HTTP requests to Gitter. (Defaults to `false`)
+* `dryrun`: When set to `true`, the resource does not make any HTTP requests. (Defaults to `false`)
 
 
 ## Invocation
@@ -43,7 +47,7 @@ This resource only supports the `put` step, so these are no-ops in this resource
 
 ### [`out`](https://concourse-ci.org/implementing-resource-types.html#resource-out)
 
-[`put`](https://concourse-ci.org/jobs.html#schema.step.put-step.put) will connect to Gitter via webhook and send the configured markdown message.
+[`put`](https://concourse-ci.org/jobs.html#schema.step.put-step.put) will connect to the webhook and send the configured markdown message.
 
 
 #### Sending Pre-formatted Messages
@@ -80,18 +84,18 @@ Any Concourse [metadata][] in the `message` string or in the text contents of `m
 
 ## Example usage
 
-Here's how the standard messages might be configured in a Concourse pipeline file:
+Here's how the resource might be configured to send pre-formatted markdown messages to a Gitter channel activity feed in a Concourse pipeline file:
 
 ``` yml
 resource_types:
-- name: gitter-notification
+- name: webhook-notification
   type: docker-image
   source:
-    repository: flavorjones/gitter-notification-resource
+    repository: flavorjones/webhook-notification-resource
 
 resources:
 - name: foobar-gitter-channel
-  type: gitter-notification
+  type: webhook-notification
   source:
     webhook: ((webhook_url))
 
@@ -110,14 +114,14 @@ And here's how you can configure a custom message:
 
 ``` yml
 resource_types:
-- name: gitter-notification
+- name: webhook-notification
   type: docker-image
   source:
-    repository: flavorjones/gitter-notification-resource
+    repository: flavorjones/webhook-notification-resource
 
 resources:
 - name: foobar-gitter-channel
-  type: gitter-notification
+  type: webhook-notification
   source:
     webhook: ((webhook_url))
 
@@ -138,12 +142,14 @@ See [docs/gitter-create-webhook.md](docs/gitter-create-webhook.md).
 
 The following features seem like reasonable things to implement, but I just haven't gotten around to them yet. If you'd like to help implement these, please do!
 
-* Connecting to Gitter via HTTP proxy or tunnel
+* Connecting via HTTP proxy or tunnel
 
 
 ## Contributing
 
 Pull requests are welcome, as are Github issues opened to discuss bugs or desired features.
+
+TODO document how to extend to new webhook types
 
 
 ### Development and Running the tests
