@@ -21,31 +21,6 @@ Rake::TestTask.new do |t|
   t.options = "--pride"
 end
 
-namespace "docker" do
-  DOCKER_TAG = "flavorjones/gitter-notification-resource"
-
-  desc "Build a docker image for the resource" # and for testing the resource
-  task "build" => "bundler:package" do
-    sh "docker build -t #{DOCKER_TAG} -f Dockerfile ."
-  end
-
-  desc "Push the docker image"
-  task "push" do
-    sh "docker push #{DOCKER_TAG}"
-  end
-
-  desc "Run the tests in the docker container"
-  task "test" => "docker:build" do
-    sh "docker run -it #{DOCKER_TAG} /work/run-tests"
-  end
-end
-
-namespace "bundler" do
-  task "package" do
-    sh "bundle package --quiet"
-  end
-end
-
 namespace "messages" do
   MESSAGE_TEMPLATE = <<~EOF
     ![__STATUS__](${ATC_EXTERNAL_URL}/public/images/__ICON__) [$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME/$BUILD_NAME](${BUILD_URL}) __STATUS__
@@ -75,4 +50,4 @@ namespace "messages" do
   end
 end
 
-task "default" => "docker:test"
+task "default" => "test"

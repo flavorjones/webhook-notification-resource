@@ -161,19 +161,33 @@ Pull requests are welcome, as are Github issues opened to discuss bugs or desire
 
 ### Development and Running the tests
 
-Requires
+#### Without a local Ruby environment
 
-* TODO
+Requirements:
+
+* make
+* docker
+
+To build an OCI image and run the tests in that image:
 
 ``` sh
-TODO
+$ make test
 ```
 
-Or if you prefer to use Docker, using the `Dockerfile`, which runs the tests as part of the image build:
+This iteration loop is slightly slower than working with a local Ruby environment (~3 seconds on my laptop).
 
+
+#### With a local Ruby environment
+
+Requirements:
+
+* ruby >= 2.7
+
+``` sh
+$ bundle install && bundle exec rake test
 ```
-make docker
-```
+
+This iteration loop is slightly faster than working inside a docker container (~1 second on my laptop).
 
 
 ## License
