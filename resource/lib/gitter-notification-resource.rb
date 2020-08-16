@@ -71,9 +71,7 @@ class GitterNotificationResource
 
     if !dryrun
       response = webhook_handler.post(webhook, message)
-      if !response.kind_of?(Net::HTTPSuccess)
-        metadata << metadata_name_value_pair("error", "#{response.code}: #{response.message}")
-      end
+      metadata << metadata_name_value_pair("response", "#{response.code} #{response.message}")
     end
 
     { "version" => { "ref" => "none" }, "metadata" => metadata }

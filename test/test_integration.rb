@@ -64,6 +64,7 @@ describe "resource scripts" do
           { "name" => "webhook", "value" => "http://localhost:#{port}/c0ffeec0ffeecafecafe" },
           { "name" => "dryrun", "value" => "false" },
           { "name" => "message", "value" => "this is a message" },
+          { "name" => "response", "value" => "200 OK" },
         ],
       }
       assert_equal expected_stdout, JSON.parse(stdout)

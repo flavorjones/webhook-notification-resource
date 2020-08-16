@@ -182,7 +182,7 @@ describe "GitterNotificationResource" do
     end
 
     describe "http post" do
-      let(:success_response) { Net::HTTPOK.new("1.1", 200, "") }
+      let(:success_response) { Net::HTTPOK.new("1.1", 200, "OK") }
       let(:failure_response) { Net::HTTPNotFound.new("1.1", 404, "this page is not found") }
 
       describe "when dryrun is true" do
@@ -192,7 +192,8 @@ describe "GitterNotificationResource" do
           webhook_handler = Minitest::Mock.new
           # we expect no calls will be made
 
-          resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+          output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+          refute output["metadata"].find { |datum| datum["name"] == "response" }
 
           webhook_handler.verify
         end
@@ -211,27 +212,26 @@ describe "GitterNotificationResource" do
         end
 
         describe "on successful post" do
-          it "does not emit error metadata" do
+          it "emits response metadata" do
             webhook_handler = Minitest::Mock.new
             webhook_handler.expect(:post, success_response, [resource.webhook, "markdown message"])
 
             output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
-            refute output["metadata"].find { |datum| datum["name"] == "error" }
+            assert_includes(output["metadata"], { "name" => "response",
+                                                  "value" => "200 OK" })
 
             webhook_handler.verify
           end
         end
 
         describe "on failure to post" do
-          it "does not emit error metadata" do
+          it "emits response metadata" do
             webhook_handler = Minitest::Mock.new
             webhook_handler.expect(:post, failure_response, [resource.webhook, "markdown message"])
 
             output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
-            error = output["metadata"].find { |datum| datum["name"] == "error" }
-            assert error
-            assert_match(/this page is not found/, error["value"])
-            assert_match(/404/, error["value"])
+            assert_includes(output["metadata"], { "name" => "response",
+                                                  "value" => "404 this page is not found" })
 
             webhook_handler.verify
           end
