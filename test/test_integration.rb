@@ -1,4 +1,5 @@
 require "helper"
+
 require "json"
 require "open3"
 require "webrick"
@@ -49,13 +50,15 @@ describe "/opt/resource/out" do
     # shut it down gracefully
     thread.exit
 
+    # check if the out script ran successfully
+    assert status.success?, "script failed, #{stderr}"
+    assert stderr.empty?
+
     # make our assertions on the server side
     assert request
     assert_includes(request, "message=this+is+a+message")
 
     # make our assertions on the client side
-    assert status.success?, "script failed, #{stderr}"
-    assert stderr.empty?
     expected_stdout = {
       "version" => { "ref" => "none" },
       "metadata" => [
