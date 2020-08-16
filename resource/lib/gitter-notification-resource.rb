@@ -3,7 +3,10 @@ require "net/http"
 class GitterNotificationResource
   VERSION = "0.1.0"
 
-  module OutParams
+  #
+  #  "source" parameter key indicating what message to send
+  #
+  module MessageSource
     STATUS = "status"
     MESSAGE = "message"
     MESSAGE_FILE = "message_file"
@@ -12,6 +15,9 @@ class GitterNotificationResource
   MESSAGE_FILES_PATH = File.expand_path(File.join(File.dirname(__FILE__), "..", "messages"))
   UNKNOWN_STATUS = "unknown"
 
+  #
+  #  expand environment variables in a string
+  #
   module EnvExpander
     ENV_VARIABLES_REGEX = /\$([a-zA-Z_]+[a-zA-Z0-9_]*)|\$\{([a-zA-Z_]+[a-zA-Z0-9_]*)\}/
 
@@ -22,6 +28,9 @@ class GitterNotificationResource
     end
   end
 
+  #
+  #  expand any special Concourse metadata
+  #
   module ConcourseEnvExpander
     BUILD_URL_TEMPLATE = "${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}"
 
@@ -31,6 +40,9 @@ class GitterNotificationResource
     end
   end
 
+  #
+  #  maybe the only real piece of gitter-specific behavior
+  #
   module GitterWebhookHandler
     def self.post(webhook, message)
       Net::HTTP.post_form(URI(webhook), "message" => message)
@@ -45,16 +57,16 @@ class GitterNotificationResource
   end
 
   def out(params = {}, env_expander: ConcourseEnvExpander, webhook_handler: GitterWebhookHandler)
-    if !params.key?(OutParams::STATUS) && !params.key?(OutParams::MESSAGE) && !params.key?(OutParams::MESSAGE_FILE)
+    if !params.key?(MessageSource::STATUS) && !params.key?(MessageSource::MESSAGE) && !params.key?(MessageSource::MESSAGE_FILE)
       raise KeyError.new("could not find 'status', 'message', or 'message_file'")
     end
 
-    message = if params.key?(OutParams::MESSAGE)
-        params[OutParams::MESSAGE]
-      elsif params.key?(OutParams::MESSAGE_FILE)
-        File.read(params[OutParams::MESSAGE_FILE])
-      elsif params.key?(OutParams::STATUS)
-        expected_file = File.join(MESSAGE_FILES_PATH, "#{params[OutParams::STATUS]}.md")
+    message = if params.key?(MessageSource::MESSAGE)
+        params[MessageSource::MESSAGE]
+      elsif params.key?(MessageSource::MESSAGE_FILE)
+        File.read(params[MessageSource::MESSAGE_FILE])
+      elsif params.key?(MessageSource::STATUS)
+        expected_file = File.join(MESSAGE_FILES_PATH, "#{params[MessageSource::STATUS]}.md")
         if File.exist?(expected_file)
           File.read(expected_file)
         else
