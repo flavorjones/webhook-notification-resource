@@ -6,33 +6,33 @@ describe "WebhookNotificationResource" do
   end
 
   describe "#initialize" do
-    it "requires a webhook hash key" do
+    it "requires a url hash key" do
       e = assert_raises(KeyError) { WebhookNotificationResource.new }
-      assert_match(/webhook/, e.to_s)
+      assert_match(/url/, e.to_s)
 
-      WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
     end
   end
 
-  describe "#webhook" do
+  describe "#url" do
     it "returns the hash key value passed to the initializer in source hash" do
-      resource = WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
-      assert_equal("https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe", resource.webhook)
+      resource = WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      assert_equal("https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe", resource.url)
     end
   end
 
   describe "#dryrun" do
     it "defaults to false" do
-      resource = WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      resource = WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
       refute resource.dryrun
     end
 
     it "may be set by adding a hash key in the initializer param" do
-      resource = WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
+      resource = WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
                                                  "dryrun" => true)
       assert resource.dryrun
 
-      resource = WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
+      resource = WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
                                                  "dryrun" => false)
       refute resource.dryrun
     end
@@ -42,7 +42,7 @@ describe "WebhookNotificationResource" do
     let(:resource_dryrun) { true }
 
     let(:resource) do
-      WebhookNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
+      WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
                                       "dryrun" => resource_dryrun)
     end
 
@@ -68,7 +68,7 @@ describe "WebhookNotificationResource" do
         output = resource.out({ "message" => "this is a markdown message" })
         assert_includes(output["metadata"], { "name" => "dryrun",
                                               "value" => "true" })
-        assert_includes(output["metadata"], { "name" => "webhook",
+        assert_includes(output["metadata"], { "name" => "url",
                                               "value" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe" })
         assert_includes(output["metadata"], { "name" => "message",
                                               "value" => "this is a markdown message" })
@@ -204,7 +204,7 @@ describe "WebhookNotificationResource" do
 
         it "does calls the webhook handler" do
           webhook_handler = Minitest::Mock.new
-          webhook_handler.expect(:post, success_response, [resource.webhook, "markdown message"])
+          webhook_handler.expect(:post, success_response, [resource.url, "markdown message"])
 
           resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
 
@@ -214,7 +214,7 @@ describe "WebhookNotificationResource" do
         describe "on successful post" do
           it "emits response metadata" do
             webhook_handler = Minitest::Mock.new
-            webhook_handler.expect(:post, success_response, [resource.webhook, "markdown message"])
+            webhook_handler.expect(:post, success_response, [resource.url, "markdown message"])
 
             output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
             assert_includes(output["metadata"], { "name" => "response",
@@ -227,7 +227,7 @@ describe "WebhookNotificationResource" do
         describe "on failure to post" do
           it "emits response metadata" do
             webhook_handler = Minitest::Mock.new
-            webhook_handler.expect(:post, failure_response, [resource.webhook, "markdown message"])
+            webhook_handler.expect(:post, failure_response, [resource.url, "markdown message"])
 
             output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
             assert_includes(output["metadata"], { "name" => "response",

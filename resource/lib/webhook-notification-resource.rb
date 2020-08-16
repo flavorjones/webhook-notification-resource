@@ -44,15 +44,15 @@ class WebhookNotificationResource
   #  maybe the only real piece of gitter-specific behavior
   #
   module GitterWebhookHandler
-    def self.post(webhook, message)
-      Net::HTTP.post_form(URI(webhook), "message" => message)
+    def self.post(url, message)
+      Net::HTTP.post_form(URI(url), "message" => message)
     end
   end
 
-  attr_reader :webhook, :dryrun
+  attr_reader :url, :dryrun
 
   def initialize(source = {})
-    @webhook = source.fetch("webhook")
+    @url = source.fetch("url")
     @dryrun = source.fetch("dryrun", false)
   end
 
@@ -77,12 +77,12 @@ class WebhookNotificationResource
 
     metadata = []
     metadata << metadata_name_value_pair("version", WebhookNotificationResource::VERSION)
-    metadata << metadata_name_value_pair("webhook", webhook)
+    metadata << metadata_name_value_pair("url", url)
     metadata << metadata_name_value_pair("dryrun", dryrun)
     metadata << metadata_name_value_pair("message", message)
 
     if !dryrun
-      response = webhook_handler.post(webhook, message)
+      response = webhook_handler.post(url, message)
       metadata << metadata_name_value_pair("response", "#{response.code} #{response.message}")
     end
 

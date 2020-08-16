@@ -31,7 +31,7 @@ These parameters go into the `source` fields of the resource.
 
 __Required__
 
-* `webhook`: The target webhook URL.
+* `url`: The target webhook URL.
 
 __Optional__
 
@@ -97,7 +97,7 @@ resources:
 - name: foobar-gitter-channel
   type: webhook-notification
   source:
-    webhook: ((webhook_url))
+    url: ((webhook_url))
 
 jobs:
 - name: run-some-tests
@@ -123,7 +123,7 @@ resources:
 - name: foobar-gitter-channel
   type: webhook-notification
   source:
-    webhook: ((webhook_url))
+    url: ((webhook_url))
 
 - name: post-a-message-to-gitter
   plan:

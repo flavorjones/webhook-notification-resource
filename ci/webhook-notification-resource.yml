@@ -8,7 +8,7 @@ resources:
 - name: gitter-channel # https://gitter.im/gitter-notifications-resource/community
   type: webhook-notification
   source:
-    webhook: ((webhook_url))
+    url: ((webhook_url))
 
 jobs:
 - name: standard-messages

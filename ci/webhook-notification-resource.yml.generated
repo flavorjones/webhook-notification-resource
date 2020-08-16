@@ -30,5 +30,5 @@ resource_types:
 resources:
 - name: gitter-channel
   source:
-    webhook: ((webhook_url))
+    url: ((webhook_url))
   type: webhook-notification

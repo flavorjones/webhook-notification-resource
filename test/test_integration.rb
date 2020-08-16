@@ -39,7 +39,7 @@ describe "/opt/resource/out" do
     # make the `out` call
     input = {
       "source" => {
-        "webhook" => "http://localhost:#{port}/c0ffeec0ffeecafecafe",
+        "url" => "http://localhost:#{port}/c0ffeec0ffeecafecafe",
       },
       "params" => {
         "message" => "this is a message",
@@ -63,7 +63,7 @@ describe "/opt/resource/out" do
       "version" => { "ref" => "none" },
       "metadata" => [
         { "name" => "version", "value" => WebhookNotificationResource::VERSION },
-        { "name" => "webhook", "value" => "http://localhost:#{port}/c0ffeec0ffeecafecafe" },
+        { "name" => "url", "value" => "http://localhost:#{port}/c0ffeec0ffeecafecafe" },
         { "name" => "dryrun", "value" => "false" },
         { "name" => "message", "value" => "this is a message" },
         { "name" => "response", "value" => "200 OK" },
