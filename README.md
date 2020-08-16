@@ -131,7 +131,7 @@ resources:
 
 ## Configuration of a Gitter Webhook
 
-See [docs/create-webhook.md](docs/create-webhook.md).
+See [docs/gitter-create-webhook.md](docs/gitter-create-webhook.md).
 
 
 ## Roadmap
