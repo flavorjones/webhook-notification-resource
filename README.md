@@ -1,8 +1,10 @@
 # [Gitter][] Notification Resource for [Concourse][]
 
+[![Join the chat at https://gitter.im/flavorjones/webhook-notifications-resource](https://badges.gitter.im/flavorjones/webhook-notifications-resource.svg)](https://gitter.im/flavorjones/webhook-notifications-resource?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Send markdown-formatted messages to a [Gitter][] channel from a [Concourse][] CI pipeline, including pre-formatted job status messages.
 
-TODO: screenshots of success and failure notifications
+![Screenshot](docs/activity-feed-screenshot-1.png)
 
   [Gitter]: https://gitter.im
   [Concourse]: https://concourse.ci
@@ -54,12 +56,14 @@ This resource comes with some standard pre-formatted messages to reflect typical
 
 Valid `status` values:
 
-* "success" will post the contents of [resources/messages/success.md](resources/messages/success.md)
-* "failure" will post the contents of [resources/messages/failure.md](resources/messages/failure.md)
-* "error" will post the contents of [resources/messages/error.md](resources/messages/error.md)
-* "abort" will post the contents of [resources/messages/abort.md](resources/messages/abort.md)
+* `aborted` will post the contents of [resource/messages/aborted.md](resource/messages/aborted.md?raw=true)
+* `errored` will post the contents of [resource/messages/errored.md](resource/messages/errored.md?raw=true)
+* `failed` will post the contents of [resource/messages/failed.md](resource/messages/failed.md?raw=true)
+* `pending` will post the contents of [resource/messages/pending.md](resource/messages/pending.md?raw=true)
+* `started` will post the contents of [resource/messages/started.md](resource/messages/started.md?raw=true)
+* `succeeded` will post the contents of [resource/messages/succeeded.md](resource/messages/succeeded.md?raw=true)
 
-Any other value will post the contents of [resources/messages/unknown.md](resources/messages/unknown.md).
+Any other value will post the contents of [resource/messages/unknown.md](resource/messages/unknown.md?raw=true).
 
 
 #### Sending Custom Messages
@@ -91,7 +95,7 @@ resources:
 - name: foobar-gitter-channel
   type: gitter-notification
   source:
-    webhook: https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe
+    webhook: ((webhook_url))
 
 jobs:
 - name: run-some-tests
@@ -117,7 +121,7 @@ resources:
 - name: foobar-gitter-channel
   type: gitter-notification
   source:
-    webhook: https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe
+    webhook: ((webhook_url))
 
 - name: post-a-message-to-gitter
   plan:
@@ -129,10 +133,8 @@ resources:
 
 ## Configuration of a Gitter Webhook
 
-TODO - step by step instructions of setting up a webhook, with screenshots
+See [docs/gitter-create-webhook.md](docs/gitter-create-webhook.md).
 
-e.g., https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe
-                                               
 
 ## Roadmap
 
@@ -148,19 +150,33 @@ Pull requests are welcome, as are Github issues opened to discuss bugs or desire
 
 ### Development and Running the tests
 
-Requires
+#### Without a local Ruby environment
 
-* TODO
+Requirements:
+
+* make
+* docker
+
+To build an OCI image and run the tests in that image:
 
 ``` sh
-TODO
+$ make test
 ```
 
-Or if you prefer to use Docker, using the `Dockerfile`, which runs the tests as part of the image build:
+This iteration loop is slightly slower than working with a local Ruby environment (~3 seconds on my laptop).
 
+
+#### With a local Ruby environment
+
+Requirements:
+
+* ruby >= 2.7
+
+``` sh
+$ bundle install && bundle exec rake test
 ```
-make docker
-```
+
+This iteration loop is slightly faster than working inside a docker container (~1 second on my laptop).
 
 
 ## License
