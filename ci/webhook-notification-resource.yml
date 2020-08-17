@@ -8,6 +8,7 @@ resources:
 - name: gitter-channel # https://gitter.im/gitter-notifications-resource/community
   type: webhook-notification
   source:
+    adapter: GitterActivityFeedAdapter
     url: ((webhook_url))
 
 jobs:
