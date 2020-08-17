@@ -39,6 +39,7 @@ describe "/opt/resource/out" do
     # make the `out` call
     input = {
       "source" => {
+        "adapter" => "GitterActivityFeedAdapter",
         "url" => "http://localhost:#{port}/c0ffeec0ffeecafecafe",
       },
       "params" => {
@@ -63,6 +64,7 @@ describe "/opt/resource/out" do
       "version" => { "ref" => "none" },
       "metadata" => [
         { "name" => "version", "value" => WebhookNotificationResource::VERSION },
+        { "name" => "adapter", "value" => "GitterActivityFeedAdapter" },
         { "name" => "url", "value" => "http://localhost:#{port}/c0ffeec0ffeecafecafe" },
         { "name" => "dryrun", "value" => "false" },
         { "name" => "message", "value" => "this is a message" },

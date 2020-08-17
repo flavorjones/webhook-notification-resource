@@ -31,6 +31,9 @@ These parameters go into the `source` fields of the resource.
 
 __Required__
 
+* `adapter`: The name of the service adapter you want to use.
+  * Generally these are named after the service they support, and live in [`resource/lib/adapters`](resource/lib/adapters).
+  * Valid values are: `GitterActivityFeedAdapter`, `MockTeapot`
 * `url`: The target webhook URL.
 
 __Optional__
@@ -97,6 +100,7 @@ resources:
 - name: foobar-gitter-channel
   type: webhook-notification
   source:
+    adapter: GitterActivityFeedAdapter
     url: ((webhook_url))
 
 jobs:
@@ -123,6 +127,7 @@ resources:
 - name: foobar-gitter-channel
   type: webhook-notification
   source:
+    adapter: GitterActivityFeedAdapter
     url: ((webhook_url))
 
 - name: post-a-message-to-gitter

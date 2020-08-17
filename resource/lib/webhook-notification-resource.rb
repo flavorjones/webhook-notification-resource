@@ -3,6 +3,9 @@ require "net/http"
 class WebhookNotificationResource
   VERSION = "0.1.0"
 
+  # used to indicate that user has asked for a non-existent adapter
+  class AdapterNotFound < StandardError; end
+
   #
   #  "source" parameter key indicating what message to send
   #
@@ -41,22 +44,40 @@ class WebhookNotificationResource
   end
 
   #
-  #  maybe the only real piece of gitter-specific behavior
+  #  some utility methods
   #
-  module GitterWebhookHandler
-    def self.post(url, message)
-      Net::HTTP.post_form(URI(url), "message" => message)
+  module Util
+    def self.filename_for_classname(classname)
+      classname.gsub(/([a-z])([A-Z0-9])/) { |m| "#{m[0]}_#{m[1]}" }.downcase
+    end
+
+    def self.metadata_name_value_pair(key, value)
+      { "name" => key.to_s, "value" => value.to_s }
     end
   end
 
-  attr_reader :url, :dryrun
+  attr_reader :url, :dryrun, :adapter
 
   def initialize(source = {})
     @url = source.fetch("url")
     @dryrun = source.fetch("dryrun", false)
+    @adapter = adapter_for(source.fetch("adapter"))
   end
 
-  def out(params = {}, env_expander: ConcourseEnvExpander, webhook_handler: GitterWebhookHandler)
+  def adapter_for(adapter_class_name)
+    filename = Util.filename_for_classname(adapter_class_name)
+    relative_path = File.join("adapters", "#{filename}.rb")
+
+    if !File.exist?(File.expand_path(File.join(File.dirname(__FILE__), relative_path)))
+      raise AdapterNotFound.new("could not find an adapter for '#{adapter_class_name}' (at '#{relative_path}')")
+    end
+
+    require_relative relative_path
+
+    Object.const_get(adapter_class_name)
+  end
+
+  def out(params = {}, env_expander: ConcourseEnvExpander, webhook_adapter: @adapter)
     if !params.key?(MessageSource::STATUS) && !params.key?(MessageSource::MESSAGE) && !params.key?(MessageSource::MESSAGE_FILE)
       raise KeyError.new("could not find 'status', 'message', or 'message_file'")
     end
@@ -76,22 +97,17 @@ class WebhookNotificationResource
     message = env_expander.expand(message)
 
     metadata = []
-    metadata << metadata_name_value_pair("version", WebhookNotificationResource::VERSION)
-    metadata << metadata_name_value_pair("url", url)
-    metadata << metadata_name_value_pair("dryrun", dryrun)
-    metadata << metadata_name_value_pair("message", message)
+    metadata << Util.metadata_name_value_pair("version", WebhookNotificationResource::VERSION)
+    metadata << Util.metadata_name_value_pair("adapter", adapter.name)
+    metadata << Util.metadata_name_value_pair("url", url)
+    metadata << Util.metadata_name_value_pair("dryrun", dryrun)
+    metadata << Util.metadata_name_value_pair("message", message)
 
     if !dryrun
-      response = webhook_handler.post(url, message)
-      metadata << metadata_name_value_pair("response", "#{response.code} #{response.message}")
+      response = webhook_adapter.post(url, message)
+      metadata << Util.metadata_name_value_pair("response", "#{response.code} #{response.message}")
     end
 
     { "version" => { "ref" => "none" }, "metadata" => metadata }
-  end
-
-  private
-
-  def metadata_name_value_pair(key, value)
-    { "name" => key.to_s, "value" => value.to_s }
   end
 end

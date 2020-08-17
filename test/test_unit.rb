@@ -6,34 +6,63 @@ describe "WebhookNotificationResource" do
   end
 
   describe "#initialize" do
-    it "requires a url hash key" do
-      e = assert_raises(KeyError) { WebhookNotificationResource.new }
-      assert_match(/url/, e.to_s)
+    it "requires a url and a webhook adapter name" do
+      assert_raises(KeyError) { WebhookNotificationResource.new }
+      assert_raises(KeyError) { WebhookNotificationResource.new({ "url" => "https://example.com/teapot" }) }
+      assert_raises(KeyError) { WebhookNotificationResource.new({ "adapter" => "MockTeapotAdapter" }) }
 
-      WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                        "adapter" => "MockTeapotAdapter" })
     end
   end
 
   describe "#url" do
     it "returns the hash key value passed to the initializer in source hash" do
-      resource = WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
-      assert_equal("https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe", resource.url)
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                                   "adapter" => "MockTeapotAdapter" })
+      assert_equal("https://example.com/teapot", resource.url)
+    end
+  end
+
+  describe "#adapter" do
+    it "raises an exception if we ask for a non-existent adapter" do
+      assert_raises(WebhookNotificationResource::AdapterNotFound) do
+        WebhookNotificationResource.new({ "url" => "https://example.com/xyzzy",
+                                          "adapter" => "does-not-exist" })
+      end
+    end
+
+    it "returns the class implied by the adapter name" do
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/xyzzy",
+                                                   "adapter" => "MockTeapotAdapter" })
+      assert_same MockTeapotAdapter, resource.adapter
+
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/xyzzy",
+                                                   "adapter" => "MockTeapotAdapter" })
+      assert_same MockTeapotAdapter, resource.adapter
+
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/gitter",
+                                                   "adapter" => "GitterActivityFeedAdapter" })
+      assert_same GitterActivityFeedAdapter, resource.adapter
     end
   end
 
   describe "#dryrun" do
     it "defaults to false" do
-      resource = WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                                   "adapter" => "MockTeapotAdapter" })
       refute resource.dryrun
     end
 
     it "may be set by adding a hash key in the initializer param" do
-      resource = WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                                 "dryrun" => true)
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                                   "adapter" => "MockTeapotAdapter",
+                                                   "dryrun" => true })
       assert resource.dryrun
 
-      resource = WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                                 "dryrun" => false)
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                                   "adapter" => "MockTeapotAdapter",
+                                                   "dryrun" => false })
       refute resource.dryrun
     end
   end
@@ -42,8 +71,9 @@ describe "WebhookNotificationResource" do
     let(:resource_dryrun) { true }
 
     let(:resource) do
-      WebhookNotificationResource.new("url" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                      "dryrun" => resource_dryrun)
+      WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                        "adapter" => "MockTeapotAdapter",
+                                        "dryrun" => resource_dryrun })
     end
 
     let(:absolute_message_file_path) { File.expand_path(File.join(File.dirname(__FILE__), "test-message.md")) }
@@ -66,10 +96,12 @@ describe "WebhookNotificationResource" do
 
       it "contains descriptive metadata for source and params" do
         output = resource.out({ "message" => "this is a markdown message" })
+        assert_includes(output["metadata"], { "name" => "adapter",
+                                              "value" => "MockTeapotAdapter" })
         assert_includes(output["metadata"], { "name" => "dryrun",
                                               "value" => "true" })
         assert_includes(output["metadata"], { "name" => "url",
-                                              "value" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe" })
+                                              "value" => "https://example.com/teapot" })
         assert_includes(output["metadata"], { "name" => "message",
                                               "value" => "this is a markdown message" })
       end
@@ -189,13 +221,13 @@ describe "WebhookNotificationResource" do
         let(:resource_dryrun) { true }
 
         it "does not call the webhook handler" do
-          webhook_handler = Minitest::Mock.new
+          webhook_adapter = Minitest::Mock.new
           # we expect no calls will be made
 
-          output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+          output = resource.out({ "message" => "markdown message" }, webhook_adapter: webhook_adapter)
           refute output["metadata"].find { |datum| datum["name"] == "response" }
 
-          webhook_handler.verify
+          webhook_adapter.verify
         end
       end
 
@@ -203,37 +235,37 @@ describe "WebhookNotificationResource" do
         let(:resource_dryrun) { false }
 
         it "does calls the webhook handler" do
-          webhook_handler = Minitest::Mock.new
-          webhook_handler.expect(:post, success_response, [resource.url, "markdown message"])
+          webhook_adapter = Minitest::Mock.new
+          webhook_adapter.expect(:post, success_response, [resource.url, "markdown message"])
 
-          resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+          resource.out({ "message" => "markdown message" }, webhook_adapter: webhook_adapter)
 
-          webhook_handler.verify
+          webhook_adapter.verify
         end
 
         describe "on successful post" do
           it "emits response metadata" do
-            webhook_handler = Minitest::Mock.new
-            webhook_handler.expect(:post, success_response, [resource.url, "markdown message"])
+            webhook_adapter = Minitest::Mock.new
+            webhook_adapter.expect(:post, success_response, [resource.url, "markdown message"])
 
-            output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+            output = resource.out({ "message" => "markdown message" }, webhook_adapter: webhook_adapter)
             assert_includes(output["metadata"], { "name" => "response",
                                                   "value" => "200 OK" })
 
-            webhook_handler.verify
+            webhook_adapter.verify
           end
         end
 
         describe "on failure to post" do
           it "emits response metadata" do
-            webhook_handler = Minitest::Mock.new
-            webhook_handler.expect(:post, failure_response, [resource.url, "markdown message"])
+            webhook_adapter = Minitest::Mock.new
+            webhook_adapter.expect(:post, failure_response, [resource.url, "markdown message"])
 
-            output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+            output = resource.out({ "message" => "markdown message" }, webhook_adapter: webhook_adapter)
             assert_includes(output["metadata"], { "name" => "response",
                                                   "value" => "404 this page is not found" })
 
-            webhook_handler.verify
+            webhook_adapter.verify
           end
         end
       end
@@ -295,6 +327,19 @@ describe "EnvExpander" do
     it "expands env vars with mixed syntax in the message" do
       output = WebhookNotificationResource::ConcourseEnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
       assert_equal "foo #{replacement_text} #{replacement_text} bar", output
+    end
+  end
+
+  describe "Util" do
+    describe "#filename_for_classname" do
+      it "converts a camelcase classname into a snakecase filename" do
+        assert_equal "foo_bar_baz", WebhookNotificationResource::Util.filename_for_classname("FooBarBaz")
+        assert_equal "foo_bar_baz_2", WebhookNotificationResource::Util.filename_for_classname("FooBarBaz2")
+        assert_equal "foo_bar_baz_id", WebhookNotificationResource::Util.filename_for_classname("FooBarBazID")
+
+        # maybe don't do this in your class name, eh?
+        assert_equal "foo_idbaz", WebhookNotificationResource::Util.filename_for_classname("FooIDBaz")
+      end
     end
   end
 end
