@@ -154,7 +154,19 @@ The following features seem like reasonable things to implement, but I just have
 
 Pull requests are welcome, as are Github issues opened to discuss bugs or desired features.
 
-TODO document how to extend to new webhook types
+### Adding Support For A New Service
+
+If you'd like to integrate with a new service:
+
+1. Fork this repo
+2. Run the tests to ensure you're in a good spot (see below)
+3. Create a new adapter in `resource/lib/adapters` named after your ClassName in snake_case.
+4. Adapters are modules with one public class method: `.post(url_string, message)`
+5. Write some tests!
+
+It's totally possible that your adapter might need to be a real class (not just a module) and take additional arguments (like the config params). If so, let's talk!
+
+If you have questions, please reach out! I shipped this in a hurry so this section is definitely not as explanatory as I'd like.
 
 
 ### Development and Running the tests
