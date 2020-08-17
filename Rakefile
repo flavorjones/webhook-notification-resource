@@ -1,7 +1,7 @@
 begin
   require "concourse"
 
-  Concourse.new("gitter-notification-resource",
+  Concourse.new("webhook-notification-resource",
                 directory: "ci",
                 fly_target: "flavorjones",
                 format: true,

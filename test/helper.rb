@@ -1,2 +1,2 @@
 require "minitest/autorun"
-require "gitter-notification-resource"
+require "webhook-notification-resource"

@@ -1,0 +1,35 @@
+jobs:
+- name: standard-messages
+  plan:
+  - params:
+      status: pending
+    put: gitter-channel
+  - params:
+      status: started
+    put: gitter-channel
+  - params:
+      status: failed
+    put: gitter-channel
+  - params:
+      status: errored
+    put: gitter-channel
+  - params:
+      status: aborted
+    put: gitter-channel
+  - params:
+      status: xyzzy
+    put: gitter-channel
+  - params:
+      status: succeeded
+    put: gitter-channel
+resource_types:
+- name: webhook-notification
+  source:
+    repository: flavorjones/webhook-notification-resource
+  type: docker-image
+resources:
+- name: gitter-channel
+  source:
+    adapter: GitterActivityFeedAdapter
+    url: ((webhook_url))
+  type: webhook-notification

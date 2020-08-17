@@ -3,7 +3,7 @@
 #  especially if there's no local Ruby development environment.
 #  see the README.md for more information.
 #
-DOCKER_TAG="flavorjones/gitter-notification-resource"
+DOCKER_TAG="flavorjones/webhook-notification-resource"
 
 image:
 	docker build -t $(DOCKER_TAG) -f Dockerfile .

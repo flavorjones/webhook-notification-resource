@@ -1,39 +1,68 @@
 require "helper"
 
-describe "GitterNotificationResource" do
+describe "WebhookNotificationResource" do
   def message_from(output)
     output["metadata"].find { |datum| datum["name"] == "message" }["value"]
   end
 
   describe "#initialize" do
-    it "requires a webhook hash key" do
-      e = assert_raises(KeyError) { GitterNotificationResource.new }
-      assert_match(/webhook/, e.to_s)
+    it "requires a url and a webhook adapter name" do
+      assert_raises(KeyError) { WebhookNotificationResource.new }
+      assert_raises(KeyError) { WebhookNotificationResource.new({ "url" => "https://example.com/teapot" }) }
+      assert_raises(KeyError) { WebhookNotificationResource.new({ "adapter" => "MockTeapotAdapter" }) }
 
-      GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                        "adapter" => "MockTeapotAdapter" })
     end
   end
 
-  describe "#webhook" do
+  describe "#url" do
     it "returns the hash key value passed to the initializer in source hash" do
-      resource = GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
-      assert_equal("https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe", resource.webhook)
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                                   "adapter" => "MockTeapotAdapter" })
+      assert_equal("https://example.com/teapot", resource.url)
+    end
+  end
+
+  describe "#adapter" do
+    it "raises an exception if we ask for a non-existent adapter" do
+      assert_raises(WebhookNotificationResource::AdapterNotFound) do
+        WebhookNotificationResource.new({ "url" => "https://example.com/xyzzy",
+                                          "adapter" => "does-not-exist" })
+      end
+    end
+
+    it "returns the class implied by the adapter name" do
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/xyzzy",
+                                                   "adapter" => "MockTeapotAdapter" })
+      assert_same MockTeapotAdapter, resource.adapter
+
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/xyzzy",
+                                                   "adapter" => "MockTeapotAdapter" })
+      assert_same MockTeapotAdapter, resource.adapter
+
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/gitter",
+                                                   "adapter" => "GitterActivityFeedAdapter" })
+      assert_same GitterActivityFeedAdapter, resource.adapter
     end
   end
 
   describe "#dryrun" do
     it "defaults to false" do
-      resource = GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe")
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                                   "adapter" => "MockTeapotAdapter" })
       refute resource.dryrun
     end
 
     it "may be set by adding a hash key in the initializer param" do
-      resource = GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                                "dryrun" => true)
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                                   "adapter" => "MockTeapotAdapter",
+                                                   "dryrun" => true })
       assert resource.dryrun
 
-      resource = GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                                "dryrun" => false)
+      resource = WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                                   "adapter" => "MockTeapotAdapter",
+                                                   "dryrun" => false })
       refute resource.dryrun
     end
   end
@@ -42,8 +71,9 @@ describe "GitterNotificationResource" do
     let(:resource_dryrun) { true }
 
     let(:resource) do
-      GitterNotificationResource.new("webhook" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe",
-                                     "dryrun" => resource_dryrun)
+      WebhookNotificationResource.new({ "url" => "https://example.com/teapot",
+                                        "adapter" => "MockTeapotAdapter",
+                                        "dryrun" => resource_dryrun })
     end
 
     let(:absolute_message_file_path) { File.expand_path(File.join(File.dirname(__FILE__), "test-message.md")) }
@@ -66,10 +96,12 @@ describe "GitterNotificationResource" do
 
       it "contains descriptive metadata for source and params" do
         output = resource.out({ "message" => "this is a markdown message" })
+        assert_includes(output["metadata"], { "name" => "adapter",
+                                              "value" => "MockTeapotAdapter" })
         assert_includes(output["metadata"], { "name" => "dryrun",
                                               "value" => "true" })
-        assert_includes(output["metadata"], { "name" => "webhook",
-                                              "value" => "https://webhooks.gitter.im/e/c0ffeec0ffeecafecafe" })
+        assert_includes(output["metadata"], { "name" => "url",
+                                              "value" => "https://example.com/teapot" })
         assert_includes(output["metadata"], { "name" => "message",
                                               "value" => "this is a markdown message" })
       end
@@ -77,7 +109,7 @@ describe "GitterNotificationResource" do
       it "puts version into the metadata" do
         output = resource.out({ "message" => "this is a markdown message" })
         assert_includes(output["metadata"], { "name" => "version",
-                                              "value" => GitterNotificationResource::VERSION })
+                                              "value" => WebhookNotificationResource::VERSION })
       end
     end
 
@@ -189,13 +221,13 @@ describe "GitterNotificationResource" do
         let(:resource_dryrun) { true }
 
         it "does not call the webhook handler" do
-          webhook_handler = Minitest::Mock.new
+          webhook_adapter = Minitest::Mock.new
           # we expect no calls will be made
 
-          output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+          output = resource.out({ "message" => "markdown message" }, webhook_adapter: webhook_adapter)
           refute output["metadata"].find { |datum| datum["name"] == "response" }
 
-          webhook_handler.verify
+          webhook_adapter.verify
         end
       end
 
@@ -203,37 +235,37 @@ describe "GitterNotificationResource" do
         let(:resource_dryrun) { false }
 
         it "does calls the webhook handler" do
-          webhook_handler = Minitest::Mock.new
-          webhook_handler.expect(:post, success_response, [resource.webhook, "markdown message"])
+          webhook_adapter = Minitest::Mock.new
+          webhook_adapter.expect(:post, success_response, [resource.url, "markdown message"])
 
-          resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+          resource.out({ "message" => "markdown message" }, webhook_adapter: webhook_adapter)
 
-          webhook_handler.verify
+          webhook_adapter.verify
         end
 
         describe "on successful post" do
           it "emits response metadata" do
-            webhook_handler = Minitest::Mock.new
-            webhook_handler.expect(:post, success_response, [resource.webhook, "markdown message"])
+            webhook_adapter = Minitest::Mock.new
+            webhook_adapter.expect(:post, success_response, [resource.url, "markdown message"])
 
-            output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+            output = resource.out({ "message" => "markdown message" }, webhook_adapter: webhook_adapter)
             assert_includes(output["metadata"], { "name" => "response",
                                                   "value" => "200 OK" })
 
-            webhook_handler.verify
+            webhook_adapter.verify
           end
         end
 
         describe "on failure to post" do
           it "emits response metadata" do
-            webhook_handler = Minitest::Mock.new
-            webhook_handler.expect(:post, failure_response, [resource.webhook, "markdown message"])
+            webhook_adapter = Minitest::Mock.new
+            webhook_adapter.expect(:post, failure_response, [resource.url, "markdown message"])
 
-            output = resource.out({ "message" => "markdown message" }, webhook_handler: webhook_handler)
+            output = resource.out({ "message" => "markdown message" }, webhook_adapter: webhook_adapter)
             assert_includes(output["metadata"], { "name" => "response",
                                                   "value" => "404 this page is not found" })
 
-            webhook_handler.verify
+            webhook_adapter.verify
           end
         end
       end
@@ -248,25 +280,25 @@ describe "EnvExpander" do
   let(:replacement_text) { "xxx#{rand(1000)}" }
 
   it "expands env vars in the message" do
-    output = GitterNotificationResource::EnvExpander.expand "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo $UNIT_TEST_FOOBAR $UNIT_TEST_FOOBAR bar"
     assert_equal "foo #{replacement_text} #{replacement_text} bar", output
   end
 
   it "expands env vars within curly braces in the message" do
-    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} ${UNIT_TEST_FOOBAR} bar"
     assert_equal "foo #{replacement_text} #{replacement_text} bar", output
   end
 
   it "expands env vars with mixed syntax in the message" do
-    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
     assert_equal "foo #{replacement_text} #{replacement_text} bar", output
   end
 
   it "does not expand things that are not env vars" do
-    output = GitterNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_QUUX} bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo ${UNIT_TEST_QUUX} bar"
     assert_equal "foo ${UNIT_TEST_QUUX} bar", output
 
-    output = GitterNotificationResource::EnvExpander.expand "foo $UNIT_TEST_QUUX bar"
+    output = WebhookNotificationResource::EnvExpander.expand "foo $UNIT_TEST_QUUX bar"
     assert_equal "foo $UNIT_TEST_QUUX bar", output
   end
 
@@ -286,15 +318,28 @@ describe "EnvExpander" do
         ENV["BUILD_PIPELINE_NAME"] = pipeline_name = rand(1000).to_s
         ENV["BUILD_JOB_NAME"] = job_name = rand(1000).to_s
         ENV["BUILD_NAME"] = name = rand(1000).to_s
-        output = GitterNotificationResource::ConcourseEnvExpander.expand "foo $BUILD_URL bar"
+        output = WebhookNotificationResource::ConcourseEnvExpander.expand "foo $BUILD_URL bar"
         expected = "foo #{atc_external_url}/teams/#{team_name}/pipelines/#{pipeline_name}/jobs/#{job_name}/builds/#{name} bar"
         assert_equal expected, output
       end
     end
 
     it "expands env vars with mixed syntax in the message" do
-      output = GitterNotificationResource::ConcourseEnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
+      output = WebhookNotificationResource::ConcourseEnvExpander.expand "foo ${UNIT_TEST_FOOBAR} $UNIT_TEST_FOOBAR bar"
       assert_equal "foo #{replacement_text} #{replacement_text} bar", output
+    end
+  end
+
+  describe "Util" do
+    describe "#filename_for_classname" do
+      it "converts a camelcase classname into a snakecase filename" do
+        assert_equal "foo_bar_baz", WebhookNotificationResource::Util.filename_for_classname("FooBarBaz")
+        assert_equal "foo_bar_baz_2", WebhookNotificationResource::Util.filename_for_classname("FooBarBaz2")
+        assert_equal "foo_bar_baz_id", WebhookNotificationResource::Util.filename_for_classname("FooBarBazID")
+
+        # maybe don't do this in your class name, eh?
+        assert_equal "foo_idbaz", WebhookNotificationResource::Util.filename_for_classname("FooIDBaz")
+      end
     end
   end
 end
