@@ -11,6 +11,8 @@ This resource provides:
   [Gitter]: https://gitter.im
   [Concourse]: https://concourse.ci
 
+[![Join the chat at https://gitter.im/flavorjones/webhook-notifications-resource](https://badges.gitter.im/flavorjones/webhook-notifications-resource.svg)](https://gitter.im/flavorjones/webhook-notifications-resource?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 
 ## Background
 
