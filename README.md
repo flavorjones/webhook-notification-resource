@@ -82,6 +82,8 @@ To send a custom message, exactly one of the following parameters must be presen
 
 Any Concourse [metadata][] in the `message` string or in the text contents of `message_file` will be evaluated prior to sending the message. If the notification text contains newlines then it will be split into multiple IRC message sends.
 
+Additionally, this resource provides a metadatum named `BUILD_URL` which should point back to the build's canonical URL. Its value is:
+
 > `${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}`
 
   [metadata]: http://concourse.ci/implementing-resources.html#resource-metadata
