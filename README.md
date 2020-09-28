@@ -110,10 +110,10 @@ jobs:
   plan:
     - task: run-a-test
       config: { ... }
-  on_success: { put: foobar-gitter-channel, params: {status: "success"} }
-  on_failure: { put: foobar-gitter-channel, params: {status: "failure"} }
-  on_error:   { put: foobar-gitter-channel, params: {status: "error"} }
-  on_abort:   { put: foobar-gitter-channel, params: {status: "abort"} }
+  on_success: { put: foobar-gitter-channel, params: {status: "succeeded"} }
+  on_failure: { put: foobar-gitter-channel, params: {status: "failed"} }
+  on_error:   { put: foobar-gitter-channel, params: {status: "errored"} }
+  on_abort:   { put: foobar-gitter-channel, params: {status: "aborted"} }
 ```
 
 And here's how you can configure a custom message:
