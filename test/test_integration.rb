@@ -56,7 +56,7 @@ describe "/opt/resource/out" do
       stdout, stderr, status = Open3.capture3("resource/out", stdin_data: input)
 
       # check if the out script ran successfully
-      assert status.success?, "script failed, #{stderr}"
+      assert status.success?, "script failed, #{stderr.inspect}"
       assert stderr.empty?
 
       # make our assertions on the server side
@@ -69,6 +69,44 @@ describe "/opt/resource/out" do
         "metadata" => [
           { "name" => "version", "value" => WebhookNotificationResource::VERSION },
           { "name" => "adapter", "value" => "GitterActivityFeedAdapter" },
+          { "name" => "url", "value" => "http://localhost:#{@port}/c0ffeec0ffeecafecafe" },
+          { "name" => "dryrun", "value" => "false" },
+          { "name" => "message", "value" => "this is a message" },
+          { "name" => "response", "value" => "200 OK" },
+        ],
+      }
+      assert_equal expected_stdout, JSON.parse(stdout)
+    end
+  end
+
+  describe "DiscordAdapter" do
+    it "makes an HTTP POST to the webhook URL with the message payload" do
+      # make the `out` call
+      input = {
+        "source" => {
+          "adapter" => "DiscordAdapter",
+          "url" => "http://localhost:#{@port}/c0ffeec0ffeecafecafe",
+        },
+        "params" => {
+          "message" => "this is a message",
+        },
+      }.to_json
+      stdout, stderr, status = Open3.capture3("resource/out", stdin_data: input)
+
+      # check if the out script ran successfully
+      assert status.success?, "script failed, #{stderr.inspect}"
+      assert stderr.empty?
+
+      # make our assertions on the server side
+      assert @request
+      assert_includes(@request, "content=this+is+a+message")
+
+      # make our assertions on the client side
+      expected_stdout = {
+        "version" => { "ref" => "none" },
+        "metadata" => [
+          { "name" => "version", "value" => WebhookNotificationResource::VERSION },
+          { "name" => "adapter", "value" => "DiscordAdapter" },
           { "name" => "url", "value" => "http://localhost:#{@port}/c0ffeec0ffeecafecafe" },
           { "name" => "dryrun", "value" => "false" },
           { "name" => "message", "value" => "this is a message" },

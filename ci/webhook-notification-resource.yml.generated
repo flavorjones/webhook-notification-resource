@@ -1,5 +1,5 @@
 jobs:
-- name: standard-messages
+- name: gitter-activity-feed
   plan:
   - params:
       status: pending
@@ -22,6 +22,29 @@ jobs:
   - params:
       status: succeeded
     put: gitter-channel
+- name: discord
+  plan:
+  - params:
+      status: pending
+    put: discord-channel
+  - params:
+      status: started
+    put: discord-channel
+  - params:
+      status: failed
+    put: discord-channel
+  - params:
+      status: errored
+    put: discord-channel
+  - params:
+      status: aborted
+    put: discord-channel
+  - params:
+      status: xyzzy
+    put: discord-channel
+  - params:
+      status: succeeded
+    put: discord-channel
 resource_types:
 - name: webhook-notification
   source:
@@ -32,4 +55,9 @@ resources:
   source:
     adapter: GitterActivityFeedAdapter
     url: ((webhook_url))
+  type: webhook-notification
+- name: discord-channel
+  source:
+    adapter: DiscordAdapter
+    url: ((discord_test_url))
   type: webhook-notification

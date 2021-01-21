@@ -10,9 +10,14 @@ resources:
   source:
     adapter: GitterActivityFeedAdapter
     url: ((webhook_url))
+- name: discord-channel
+  type: webhook-notification
+  source:
+    adapter: DiscordAdapter
+    url: ((discord_test_url))
 
 jobs:
-- name: standard-messages
+- name: gitter-activity-feed
   plan:
   - put: gitter-channel
     params: { status: pending }
@@ -27,4 +32,20 @@ jobs:
   - put: gitter-channel
     params: { status: xyzzy } # unknown
   - put: gitter-channel
+    params: { status: succeeded }
+- name: discord
+  plan:
+  - put: discord-channel
+    params: { status: pending }
+  - put: discord-channel
+    params: { status: started }
+  - put: discord-channel
+    params: { status: failed }
+  - put: discord-channel
+    params: { status: errored }
+  - put: discord-channel
+    params: { status: aborted }
+  - put: discord-channel
+    params: { status: xyzzy } # unknown
+  - put: discord-channel
     params: { status: succeeded }
