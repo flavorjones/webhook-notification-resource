@@ -23,54 +23,59 @@ describe "/opt/resource/check" do
 end
 
 describe "/opt/resource/out" do
-  it "makes an HTTP POST to the webhook URL with the message payload" do
+  before do
     # set up a dummy web server
-    server = WEBrick::HTTPServer.new(Port: 0) # choose a random port
-    port = server.config[:Port]
-    request = nil
+    @server = WEBrick::HTTPServer.new(Port: 0) # choose a random port
+    @port = @server.config[:Port]
+    @request = nil
 
-    server.mount_proc "/c0ffeec0ffeecafecafe" do |req, res|
-      request = req.to_s # for later inspection
+    @server.mount_proc "/c0ffeec0ffeecafecafe" do |req, res|
+      @request = req.to_s # for later inspection
       res.body = "OK sure"
     end
 
-    thread = Thread.new { server.start }
+    @thread = Thread.new { @server.start }
+  end
 
-    # make the `out` call
-    input = {
-      "source" => {
-        "adapter" => "GitterActivityFeedAdapter",
-        "url" => "http://localhost:#{port}/c0ffeec0ffeecafecafe",
-      },
-      "params" => {
-        "message" => "this is a message",
-      },
-    }.to_json
-    stdout, stderr, status = Open3.capture3("resource/out", stdin_data: input)
+  after do
+    @thread.exit
+  end
 
-    # shut it down gracefully
-    thread.exit
+  describe "GitterActivityFeedAdapter" do
+    it "makes an HTTP POST to the webhook URL with the message payload" do
+      # make the `out` call
+      input = {
+        "source" => {
+          "adapter" => "GitterActivityFeedAdapter",
+          "url" => "http://localhost:#{@port}/c0ffeec0ffeecafecafe",
+        },
+        "params" => {
+          "message" => "this is a message",
+        },
+      }.to_json
+      stdout, stderr, status = Open3.capture3("resource/out", stdin_data: input)
 
-    # check if the out script ran successfully
-    assert status.success?, "script failed, #{stderr}"
-    assert stderr.empty?
+      # check if the out script ran successfully
+      assert status.success?, "script failed, #{stderr}"
+      assert stderr.empty?
 
-    # make our assertions on the server side
-    assert request
-    assert_includes(request, "message=this+is+a+message")
+      # make our assertions on the server side
+      assert @request
+      assert_includes(@request, "message=this+is+a+message")
 
-    # make our assertions on the client side
-    expected_stdout = {
-      "version" => { "ref" => "none" },
-      "metadata" => [
-        { "name" => "version", "value" => WebhookNotificationResource::VERSION },
-        { "name" => "adapter", "value" => "GitterActivityFeedAdapter" },
-        { "name" => "url", "value" => "http://localhost:#{port}/c0ffeec0ffeecafecafe" },
-        { "name" => "dryrun", "value" => "false" },
-        { "name" => "message", "value" => "this is a message" },
-        { "name" => "response", "value" => "200 OK" },
-      ],
-    }
-    assert_equal expected_stdout, JSON.parse(stdout)
+      # make our assertions on the client side
+      expected_stdout = {
+        "version" => { "ref" => "none" },
+        "metadata" => [
+          { "name" => "version", "value" => WebhookNotificationResource::VERSION },
+          { "name" => "adapter", "value" => "GitterActivityFeedAdapter" },
+          { "name" => "url", "value" => "http://localhost:#{@port}/c0ffeec0ffeecafecafe" },
+          { "name" => "dryrun", "value" => "false" },
+          { "name" => "message", "value" => "this is a message" },
+          { "name" => "response", "value" => "200 OK" },
+        ],
+      }
+      assert_equal expected_stdout, JSON.parse(stdout)
+    end
   end
 end
