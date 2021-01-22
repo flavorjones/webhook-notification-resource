@@ -103,7 +103,6 @@ class WebhookNotificationResource
     metadata = []
     metadata << Util.metadata_name_value_pair("version", WebhookNotificationResource::VERSION)
     metadata << Util.metadata_name_value_pair("adapter", adapter.name)
-    metadata << Util.metadata_name_value_pair("url", url)
     metadata << Util.metadata_name_value_pair("dryrun", dryrun)
     metadata << Util.metadata_name_value_pair("message", message)
 

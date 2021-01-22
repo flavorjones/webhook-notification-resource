@@ -69,7 +69,6 @@ describe "/opt/resource/out" do
         "metadata" => [
           { "name" => "version", "value" => WebhookNotificationResource::VERSION },
           { "name" => "adapter", "value" => "GitterActivityFeedAdapter" },
-          { "name" => "url", "value" => "http://localhost:#{@port}/c0ffeec0ffeecafecafe" },
           { "name" => "dryrun", "value" => "false" },
           { "name" => "message", "value" => "this is a message" },
           { "name" => "response", "value" => "200 OK" },
@@ -107,7 +106,6 @@ describe "/opt/resource/out" do
         "metadata" => [
           { "name" => "version", "value" => WebhookNotificationResource::VERSION },
           { "name" => "adapter", "value" => "DiscordAdapter" },
-          { "name" => "url", "value" => "http://localhost:#{@port}/c0ffeec0ffeecafecafe" },
           { "name" => "dryrun", "value" => "false" },
           { "name" => "message", "value" => "this is a message" },
           { "name" => "response", "value" => "200 OK" },

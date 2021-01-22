@@ -100,8 +100,6 @@ describe "WebhookNotificationResource" do
                                               "value" => "MockTeapotAdapter" })
         assert_includes(output["metadata"], { "name" => "dryrun",
                                               "value" => "true" })
-        assert_includes(output["metadata"], { "name" => "url",
-                                              "value" => "https://example.com/teapot" })
         assert_includes(output["metadata"], { "name" => "message",
                                               "value" => "this is a markdown message" })
       end
