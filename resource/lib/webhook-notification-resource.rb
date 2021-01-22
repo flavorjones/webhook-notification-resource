@@ -87,11 +87,15 @@ class WebhookNotificationResource
       elsif params.key?(MessageSource::MESSAGE_FILE)
         File.read(params[MessageSource::MESSAGE_FILE])
       elsif params.key?(MessageSource::STATUS)
-        expected_file = File.join(MESSAGE_FILES_PATH, "#{params[MessageSource::STATUS]}.md")
-        if File.exist?(expected_file)
-          File.read(expected_file)
+        if adapter.respond_to?(:status_message_for)
+          adapter.status_message_for(params[MessageSource::STATUS])
         else
-          File.read(File.join(MESSAGE_FILES_PATH, "#{UNKNOWN_STATUS}.md"))
+          expected_file = File.join(MESSAGE_FILES_PATH, "#{params[MessageSource::STATUS]}.md")
+          if File.exist?(expected_file)
+            File.read(expected_file)
+          else
+            File.read(File.join(MESSAGE_FILES_PATH, "#{UNKNOWN_STATUS}.md"))
+          end
         end
       end
     message = env_expander.expand(message)

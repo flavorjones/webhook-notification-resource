@@ -165,7 +165,7 @@ If you'd like to integrate with a new service:
 1. Fork this repo
 2. Run the tests to ensure you're in a good spot (see below)
 3. Create a new adapter in `resource/lib/adapters` named after your ClassName in snake_case.
-4. Adapters are modules with one public class method: `.post(url_string, message)`
+4. Adapters are modules with one public class method: `.post(url_string, message)` and one optional public class method: `.status_message_for(status)`
 5. Write some tests!
 
 It's totally possible that your adapter might need to be a real class (not just a module) and take additional arguments (like the config params). If so, let's talk!
