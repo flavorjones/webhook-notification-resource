@@ -1,7 +1,7 @@
 require "net/http"
 
 class WebhookNotificationResource
-  VERSION = "1.0.0"
+  VERSION = "1.1.0"
 
   # used to indicate that user has asked for a non-existent adapter
   class AdapterNotFound < StandardError; end
