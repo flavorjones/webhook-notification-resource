@@ -15,6 +15,30 @@ This resource provides:
 
 [![Join the chat at https://gitter.im/flavorjones/webhook-notifications-resource](https://badges.gitter.im/flavorjones/webhook-notifications-resource.svg)](https://gitter.im/flavorjones/webhook-notifications-resource?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+## Contents
+
+<!-- toc -->
+
+- [Background](#background)
+- [Source Configuration](#source-configuration)
+- [Invocation](#invocation)
+  * [`check`](#check)
+  * [`out`](#out)
+    + [Sending Pre-formatted Messages](#sending-pre-formatted-messages)
+    + [Sending Custom Messages](#sending-custom-messages)
+- [Example usage](#example-usage)
+  * [Discord example](#discord-example)
+  * [Gitter example](#gitter-example)
+  * [Custom message example](#custom-message-example)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+  * [Adding Support For A New Service](#adding-support-for-a-new-service)
+  * [Development and Running the tests](#development-and-running-the-tests)
+    + [Without a local Ruby environment](#without-a-local-ruby-environment)
+    + [With a local Ruby environment](#with-a-local-ruby-environment)
+- [License](#license)
+
+<!-- tocstop -->
 
 ## Background
 
