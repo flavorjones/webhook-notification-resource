@@ -5,11 +5,13 @@ Send notification messages to any webhook from a [Concourse][] CI pipeline.
 This resource provides:
 
 * Pre-formatted markdown messages, with colorful icons, for every Concourse job status.
+* Integration with [Discord][].
 * Integration with [Gitter][] activity feeds.
 * Extensible design to easily add support for other webhooks. (See [Contributing](#contributing) for more information.)
 
-  [Gitter]: https://gitter.im
-  [Concourse]: https://concourse.ci
+  [Discord]: https://discord.com/
+  [Gitter]: https://gitter.im/
+  [Concourse]: https://concourse.ci/
 
 [![Join the chat at https://gitter.im/flavorjones/webhook-notifications-resource](https://badges.gitter.im/flavorjones/webhook-notifications-resource.svg)](https://gitter.im/flavorjones/webhook-notifications-resource?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -35,7 +37,7 @@ __Required__
 
 * `adapter`: The name of the service adapter you want to use.
   * Generally these are named after the service they support, and live in [`resource/lib/adapters`](resource/lib/adapters).
-  * Valid values are: `GitterActivityFeedAdapter`, `MockTeapot`
+  * Valid values are: `DiscordAdapter`, `GitterActivityFeedAdapter`, `MockTeapot`
 * `url`: The target webhook URL.
 
 __Optional__
@@ -91,32 +93,79 @@ Additionally, this resource provides a metadatum named `BUILD_URL` which should 
 
 ## Example usage
 
+### Discord example
+
+Here's how the resource might be configured to send pre-formatted markdown messages to a Discord channel activity feed in a Concourse pipeline file:
+
+``` yml
+resource_types:
+  - name: webhook-notification
+    type: registry-image
+    source:
+      repository: flavorjones/webhook-notification-resource
+      tag: latest
+
+resources:
+  - name: my-discord-channel
+    type: webhook-notification
+    icon: bell
+    source:
+      adapter: DiscordAdapter
+      url: ((webhook_url))
+
+jobs:
+  - name: build-success
+    plan:
+      - task: run-a-test
+        config: { ... }
+    on_success: { put: my-discord-channel, params: {status: "succeeded"} }
+    on_failure: { put: my-discord-channel, params: {status: "failed"} }
+    on_error:   { put: my-discord-channel, params: {status: "errored"} }
+    on_abort:   { put: my-discord-channel, params: {status: "aborted"} }
+```
+
+And here's what the standard notifications look like before any configuration:
+
+![discord-notifications](docs/discord-notif-screenshot-1.png)
+
+
+### Gitter example
+
+See [docs/gitter-create-webhook.md](docs/gitter-create-webhook.md) for help creating a Gitter webhook.
+
 Here's how the resource might be configured to send pre-formatted markdown messages to a Gitter channel activity feed in a Concourse pipeline file:
 
 ``` yml
 resource_types:
-- name: webhook-notification
-  type: docker-image
-  source:
-    repository: flavorjones/webhook-notification-resource
+  - name: webhook-notification
+    type: docker-image
+    source:
+      repository: flavorjones/webhook-notification-resource
 
 resources:
-- name: foobar-gitter-channel
-  type: webhook-notification
-  source:
-    adapter: GitterActivityFeedAdapter
-    url: ((webhook_url))
+  - name: foobar-gitter-channel
+    type: webhook-notification
+    source:
+      adapter: GitterActivityFeedAdapter
+      url: ((webhook_url))
 
 jobs:
-- name: run-some-tests
-  plan:
-    - task: run-a-test
-      config: { ... }
-  on_success: { put: foobar-gitter-channel, params: {status: "succeeded"} }
-  on_failure: { put: foobar-gitter-channel, params: {status: "failed"} }
-  on_error:   { put: foobar-gitter-channel, params: {status: "errored"} }
-  on_abort:   { put: foobar-gitter-channel, params: {status: "aborted"} }
+  - name: run-some-tests
+    plan:
+      - task: run-a-test
+        config: { ... }
+    on_success: { put: foobar-gitter-channel, params: {status: "succeeded"} }
+    on_failure: { put: foobar-gitter-channel, params: {status: "failed"} }
+    on_error:   { put: foobar-gitter-channel, params: {status: "errored"} }
+    on_abort:   { put: foobar-gitter-channel, params: {status: "aborted"} }
 ```
+
+And here's what the standard notifications look like before any configuration:
+
+![gitter-notifications](docs/gitter-activity-feed-screenshot-1.png)
+
+
+### Custom message example
 
 And here's how you can configure a custom message:
 
@@ -140,11 +189,6 @@ resources:
     params:
       message: "_This_ is a *markdown* message about [${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME}/${BUILD_NAME}}](${BUILD_URL})"
 ```
-
-
-## Configuration of a Gitter Webhook
-
-See [docs/gitter-create-webhook.md](docs/gitter-create-webhook.md).
 
 
 ## Roadmap
